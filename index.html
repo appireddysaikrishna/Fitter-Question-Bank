@@ -50,6 +50,8 @@ details.setup>summary{cursor:pointer;font-weight:600;padding:8px 0}
 .steps{padding-left:22px;margin:8px 0 16px;color:var(--muted);font-size:.93rem;max-width:64ch}
 .steps li{margin:7px 0}
 code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;background:var(--field);border:1px solid var(--line);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.msg div+div{margin-top:3px}
 .picker{display:grid;gap:10px;margin-top:12px}
 @media (max-width:560px){.statsbox{align-items:flex-start}}
 .tabs{position:sticky;top:0;z-index:5;display:flex;gap:2px;background:var(--bg);border-bottom:1px solid var(--line);margin:0 -16px 20px;padding:0 12px;overflow-x:auto}
@@ -134,6 +136,7 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
 @media (prefers-reduced-motion:reduce){*{transition:none !important}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -270,15 +273,15 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
       </details>
 
       <section class="backup">
-        <h2>Backup file on this device</h2>
-        <p>Download all questions as a file, or restore from one. Files from the earlier version of this tool work too.</p>
+        <h2>Excel backup</h2>
+        <p>Download every question as an Excel sheet. You can add questions to it by hand, one per row, then restore it here. Older .json backups can be restored too.</p>
         <div class="row">
-          <button type="button" class="btn" id="btn-export">Download backup</button>
-          <button type="button" class="btn" id="btn-import">Restore from backup</button>
-          <input type="file" id="file-import" accept="application/json,.json" hidden>
+          <button type="button" class="btn" id="btn-export">Download Excel backup</button>
+          <button type="button" class="btn" id="btn-import">Restore from Excel</button>
+          <input type="file" id="file-import" accept=".xlsx,.json,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
         </div>
+        <div id="import-report" role="status" hidden style="margin-top:14px"></div>
       </section>
-    </section>
   </main>
   <p class="status" id="storage-status"></p>
 </div>
@@ -519,7 +522,7 @@ function buildPdf(JsPDF, sections, opts){
 
 var LET = ['A','B','C','D'];
 /* Paste your Google OAuth client ID between the quotes to use it on every device. */
-var GOOGLE_CLIENT_ID = '227210201989-sr5e9c163h6cm4t9lsrsv4743o363tpu.apps.googleusercontent.com';
+var GOOGLE_CLIENT_ID = '';
 
 var state = {
   cats: [], tomb: {c:{}, q:{}}, tab: 'add',
@@ -675,7 +678,7 @@ function mergeData(a, b){
 /* ---------- Files on this device ---------- */
 async function saveFile(filename, data){
   try {
-    var type = /\.pdf$/i.test(filename) ? 'application/pdf' : 'application/json';
+    var type = /\.pdf$/i.test(filename) ? 'application/pdf' : /\.xlsx$/i.test(filename) ? XL_MIME : 'application/json';
     var url = URL.createObjectURL(new Blob([data], {type: type}));
     var a = el('a', {href: url, download: filename});
     document.body.append(a); a.click(); a.remove();
@@ -1230,12 +1233,212 @@ async function makePdf(){
   } finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
 }
 
-/* ---------- Backup ---------- */
-async function exportBackup(){
-  if (!totalQuestions()){ toast('There is nothing to back up yet.', 'error'); return; }
-  var ok = await saveFile('fitter-question-bank-backup.json', serialize());
-  if (ok) toast('Backup downloaded.');
+/* ---------- Excel backup ---------- */
+var XL_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+var XL_COLS = [
+  {key:'cat', header:'Category', width:24}, {key:'q', header:'Question', width:62},
+  {key:'a', header:'Option A', width:28}, {key:'b', header:'Option B', width:28},
+  {key:'c', header:'Option C', width:28}, {key:'d', header:'Option D', width:28},
+  {key:'ans', header:'Correct answer', width:15}, {key:'ref', header:'Reference', width:18},
+  {key:'id', header:'ID', width:14}
+];
+function xlDate(){
+  var d = new Date(), p = function(n){ return String(n).padStart(2,'0'); };
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
 }
+async function buildWorkbook(){
+  var wb = new ExcelJS.Workbook();
+  wb.creator = 'Fitter Question Bank'; wb.created = new Date();
+  var ws = wb.addWorksheet('Questions', { views: [{ state:'frozen', ySplit:1 }] });
+  ws.columns = XL_COLS.map(function(c){ return { header:c.header, key:c.key, width:c.width }; });
+  var head = ws.getRow(1);
+  head.height = 24;
+  head.eachCell(function(cell){
+    cell.font = { name:'Arial', size:11, bold:true, color:{ argb:'FFFFFFFF' } };
+    cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF1F4E8C' } };
+    cell.alignment = { vertical:'middle', wrapText:true };
+  });
+  var n = 0;
+  sortedCats().forEach(function(c){
+    c.questions.forEach(function(q){
+      ws.addRow({ cat:c.name, q:q.q, a:q.o[0], b:q.o[1], c:q.o[2], d:q.o[3], ans: q.a>=0 ? LET[q.a] : '', ref:q.ref, id:q.id });
+      n++;
+    });
+  });
+  var last = Math.max(ws.rowCount, 1);
+  for (var r=2; r<=last; r++){
+    ws.getRow(r).eachCell({ includeEmpty:true }, function(cell, col){
+      if (col>9) return;
+      cell.font = { name:'Arial', size:10, color:{ argb: col===9 ? 'FF8A96A0' : 'FF000000' } };
+      cell.alignment = { vertical:'top', wrapText: col>=2 && col<=6 };
+    });
+  }
+  try { ws.dataValidations.add('G2:G5000', { type:'list', allowBlank:true, formulae:['"A,B,C,D"'], showErrorMessage:true, errorTitle:'Correct answer', error:'Use A, B, C or D, or leave it empty.' }); } catch(e){}
+  ws.autoFilter = { from:'A1', to:'I1' };
+
+  var hs = wb.addWorksheet('How to use');
+  hs.getColumn(1).width = 24; hs.getColumn(2).width = 62;
+  [3,4,5,6,7].forEach(function(i){ hs.getColumn(i).width = 20; });
+  var lines = [
+    ['How to add questions in Excel', true],
+    ['1. Go to the Questions sheet and add one question per row, below the last row.', false],
+    ['2. Fill Category, Question, and all four options. Reference is optional (for example ISRO 2026).', false],
+    ['3. Correct answer is optional. Choose A, B, C or D, or leave it empty.', false],
+    ['4. Leave the ID column empty for new rows. Do not change IDs on existing rows.', false],
+    ['5. To fix an existing question, edit its row and keep its ID. Restoring will update it.', false],
+    ['6. Save the file, then use Restore from Excel in the app. Duplicates are skipped.', false],
+    ['Deleting a row in Excel does not delete the question in the app. Delete it in the app.', false]
+  ];
+  lines.forEach(function(l, i){
+    var cell = hs.getCell(i+1, 1);
+    cell.value = l[0];
+    cell.font = { name:'Arial', size: l[1] ? 13 : 10, bold: l[1] };
+  });
+  var er = lines.length + 2;
+  hs.getCell(er, 1).value = 'Example row (do not copy this into Questions):';
+  hs.getCell(er, 1).font = { name:'Arial', size:10, bold:true };
+  var ex = ['Category', 'Question', 'Option A', 'Option B', 'Option C', 'Option D', 'Correct answer', 'Reference'];
+  var exv = ['Measuring instruments', 'The least count of a standard vernier caliper is:', '0.02 mm', '0.1 mm', '0.5 mm', '1 mm', 'A', 'ISRO 2026'];
+  ex.forEach(function(t, i){
+    var h = hs.getCell(er+1, i+1); h.value = t; h.font = { name:'Arial', size:10, bold:true }; h.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFE3ECF7' } };
+    var v = hs.getCell(er+2, i+1); v.value = exv[i]; v.font = { name:'Arial', size:10 }; v.alignment = { wrapText:true, vertical:'top' };
+  });
+  return { buffer: await wb.xlsx.writeBuffer(), count: n };
+}
+async function exportExcel(){
+  if (!window.ExcelJS){ toast('The Excel library did not load. Check your internet connection and reload the page.', 'error'); return; }
+  try {
+    var res = await buildWorkbook();
+    var ok = await saveFile('fitter-question-bank-' + xlDate() + '.xlsx', res.buffer);
+    if (ok) toast(res.count ? 'Excel backup downloaded (' + plural(res.count, 'question') + ').' : 'Empty Excel sheet downloaded. Add questions to it, then restore.');
+  } catch(e){
+    toast('Could not build the Excel file: ' + (e && e.message || e), 'error');
+  }
+}
+
+function cellStr(cell){
+  var t = '';
+  try { t = cell ? String(cell.text == null ? '' : cell.text) : ''; } catch(e){ t = ''; }
+  return t.replace(/\r\n?/g, '\n').trim();
+}
+function findCols(ws){
+  var cols = {}, hr = ws.getRow(1);
+  hr.eachCell({ includeEmpty:false }, function(cell, i){
+    var h = norm(cellStr(cell));
+    if (/^(category|topic)/.test(h)) cols.cat = i;
+    else if (/^question/.test(h)) cols.q = i;
+    else if (/^(option\s*)?a$/.test(h)) cols.a = i;
+    else if (/^(option\s*)?b$/.test(h)) cols.b = i;
+    else if (/^(option\s*)?c$/.test(h)) cols.c = i;
+    else if (/^(option\s*)?d$/.test(h)) cols.d = i;
+    else if (/^(correct|answer)/.test(h)) cols.ans = i;
+    else if (/^ref/.test(h)) cols.ref = i;
+    else if (h === 'id') cols.id = i;
+  });
+  if (!cols.q || !cols.cat){
+    cols = { cat:1, q:2, a:3, b:4, c:5, d:6, ans:7, ref:8, id:9 };
+  }
+  return cols;
+}
+function parseAnswer(txt, opts){
+  var t = String(txt||'').trim();
+  if (!t) return { a:-1, unclear:false };
+  var m = /^([A-Da-d])[.)]?$/.exec(t);
+  if (m) return { a: 'ABCD'.indexOf(m[1].toUpperCase()), unclear:false };
+  if (/^[1-4]$/.test(t)) return { a: Number(t) - 1, unclear:false };
+  var k = norm(t);
+  for (var i=0;i<4;i++) if (norm(opts[i]) === k) return { a:i, unclear:false };
+  return { a:-1, unclear:true };
+}
+async function readExcelRows(buf){
+  var wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf);
+  var ws = wb.getWorksheet('Questions') || wb.worksheets[0];
+  if (!ws) throw new Error('The file has no sheets.');
+  var c = findCols(ws), rows = [], bad = [];
+  for (var r=2; r<=ws.rowCount; r++){
+    var row = ws.getRow(r);
+    var g = function(k){ return c[k] ? cellStr(row.getCell(c[k])) : ''; };
+    var item = { row:r, cat:tidy(g('cat')), q:g('q'), o:[g('a'), g('b'), g('c'), g('d')], ans:g('ans'), ref:tidy(g('ref')), id:tidy(g('id')) };
+    var empty = !item.cat && !item.q && !item.o.some(Boolean);
+    if (empty) continue;
+    var why = !item.cat ? 'category is empty' : !item.q ? 'question is empty' : (function(){ for (var i=0;i<4;i++) if (!item.o[i]) return 'option ' + LET[i] + ' is empty'; return ''; })();
+    if (why){ bad.push('Row ' + r + ': ' + why); continue; }
+    var pa = parseAnswer(item.ans, item.o);
+    item.a = pa.a; item.unclear = pa.unclear;
+    rows.push(item);
+  }
+  return { rows: rows, bad: bad };
+}
+function applyExcelRows(rows){
+  var res = { added:0, updated:0, same:0, dup:0, unclear:[] }, touched = {}, now = Date.now();
+  rows.forEach(function(it){
+    var target = findCat(it.cat) || newCat(it.cat);
+    var oldCat = null, oldQ = null;
+    if (it.id){
+      state.cats.some(function(c){
+        var q = c.questions.filter(function(x){ return x.id === it.id; })[0];
+        if (q){ oldCat = c; oldQ = q; return true; }
+        return false;
+      });
+    }
+    if (it.unclear) res.unclear.push(it.row);
+    if (oldQ){
+      var same = oldCat.id === target.id && oldQ.q === it.q && oldQ.a === it.a && oldQ.ref === it.ref && oldQ.o.every(function(t, i){ return t === it.o[i]; });
+      if (same){ res.same++; return; }
+      oldQ.q = it.q; oldQ.o = it.o.slice(); oldQ.a = it.a; oldQ.ref = it.ref; oldQ.u = now;
+      if (oldCat.id !== target.id){
+        oldCat.questions = oldCat.questions.filter(function(x){ return x !== oldQ; });
+        target.questions.push(oldQ); touched[oldCat.id] = oldCat;
+      }
+      touched[target.id] = target; res.updated++;
+      return;
+    }
+    if (target.questions.some(function(x){ return norm(x.q) === norm(it.q); })){ res.dup++; return; }
+    target.questions.push({ id:uid('q'), q:it.q, o:it.o.slice(), a:it.a, ref:it.ref, t:now, u:now });
+    touched[target.id] = target; res.added++;
+  });
+  Object.keys(touched).forEach(function(id){ persist(touched[id]); });
+  return res;
+}
+function showReport(lines, isError){
+  var box = $('#import-report');
+  if (!box) return;
+  box.hidden = !lines.length;
+  box.className = 'msg' + (isError ? '' : ' ok');
+  box.replaceChildren.apply(box, lines.map(function(t){ return el('div', { text:t }); }));
+}
+async function importExcel(buf){
+  if (!window.ExcelJS){ toast('The Excel library did not load. Check your internet connection and reload the page.', 'error'); return; }
+  var out;
+  try { out = await readExcelRows(buf); }
+  catch(e){ showReport(['Could not read that Excel file: ' + (e && e.message || e)], true); return; }
+  var res = applyExcelRows(out.rows);
+  renderAll();
+  var lines = [];
+  lines.push('Restore finished: ' + res.added + ' added, ' + res.updated + ' updated, ' + (res.same + res.dup) + ' already in the bank.');
+  if (res.unclear.length) lines.push('Correct answer not recognised in ' + plural(res.unclear.length, 'row') + ' (' + res.unclear.slice(0,8).join(', ') + '), so no answer was marked.');
+  if (out.bad.length){
+    lines.push('Skipped ' + plural(out.bad.length, 'row') + (out.bad.length === 1 ? ' that was incomplete:' : ' that were incomplete:'));
+    out.bad.slice(0, 8).forEach(function(b){ lines.push(b); });
+    if (out.bad.length > 8) lines.push('and ' + (out.bad.length - 8) + ' more.');
+  }
+  showReport(lines, out.bad.length > 0);
+  toast(res.added || res.updated ? 'Restored from Excel.' : 'Nothing new to add.');
+}
+function restoreFile(file){
+  if (!file) return;
+  var isJson = /\.json$/i.test(file.name) || file.type === 'application/json';
+  var r = new FileReader();
+  r.onerror = function(){ toast('Could not read that file.', 'error'); };
+  r.onload = function(){
+    showReport([]);
+    if (isJson) importBackup(String(r.result || ''));
+    else importExcel(r.result);
+  };
+  if (isJson) r.readAsText(file); else r.readAsArrayBuffer(file);
+}
+
 function importBackup(text){
   var data;
   try { data = JSON.parse(text); } catch(e){ toast('That file is not a valid backup.', 'error'); return; }
@@ -1343,7 +1546,13 @@ $('#p-ref').addEventListener('change', function(){ renderPdfTab(); });
 $('#p-all').addEventListener('click', function(){ state.deselected = {}; renderPdfTab(); });
 $('#p-none').addEventListener('click', function(){ state.cats.forEach(function(c){ state.deselected[c.id] = true; }); renderPdfTab(); });
 $('#btn-pdf').addEventListener('click', makePdf);
-$('#btn-export').addEventListener('click', exportBackup);
+$('#btn-export').addEventListener('click', exportExcel);
+$('#file-import').addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0];
+  if (!f) return;
+  restoreFile(f);
+  e.target.value = '';
+});
 $('#drive-chip').addEventListener('click', function(){ switchTab('drive'); });
 $('#btn-connect').addEventListener('click', connectClick);
 $('#btn-sync').addEventListener('click', function(){ runSync(); });
@@ -1356,15 +1565,6 @@ $('#btn-cid-save').addEventListener('click', function(){
   setStatus(lsGet(LS_FLAG) ? 'needlogin' : 'signedout', 'Tap Reconnect to sign in.');
 });
 $('#btn-import').addEventListener('click', function(){ $('#file-import').click(); });
-$('#file-import').addEventListener('change', function(e){
-  var f = e.target.files && e.target.files[0];
-  if (!f) return;
-  var r = new FileReader();
-  r.onload = function(){ importBackup(String(r.result||'')); e.target.value = ''; };
-  r.onerror = function(){ toast('Could not read that file.', 'error'); };
-  r.readAsText(f);
-});
-
 init();
 })();
 </script>
