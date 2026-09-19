@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fitter Question Bank</title>
+<meta name="theme-color" content="#1F4E8C">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  --bg:#F3F5F7; --surface:#FFFFFF; --field:#FAFBFC; --ink:#16212B; --muted:#586977; --line:#D3DBE2;
+  --blue:#1F4E8C; --blue-ink:#FFFFFF; --blue-soft:#E3ECF7; --focus:#1F4E8C;
+  --ok:#1D6F45; --ok-soft:#DFF1E7; --warn:#7A4F00; --warn-soft:#FBF0D6; --danger:#B3261E; --danger-soft:#FBE7E5;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E151C; --surface:#16202A; --field:#111A22; --ink:#E7EDF2; --muted:#9AAAB6; --line:#2B3947;
+    --blue:#6EA3E6; --blue-ink:#0B1520; --blue-soft:#1B2D44; --focus:#8DB8F0;
+    --ok:#6CCB98; --ok-soft:#173226; --warn:#E9BE68; --warn-soft:#3A2E12; --danger:#F19A93; --danger-soft:#3A1B19;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E151C; --surface:#16202A; --field:#111A22; --ink:#E7EDF2; --muted:#9AAAB6; --line:#2B3947;
+  --blue:#6EA3E6; --blue-ink:#0B1520; --blue-soft:#1B2D44; --focus:#8DB8F0;
+  --ok:#6CCB98; --ok-soft:#173226; --warn:#E9BE68; --warn-soft:#3A2E12; --danger:#F19A93; --danger-soft:#3A1B19;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hanken Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:1.5}
+.wrap{max-width:780px;margin:0 auto;padding:22px 16px 72px}
+h1{font-size:1.55rem;line-height:1.2;margin:0;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.15rem;margin:0 0 4px;font-weight:700}
+p{margin:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:10px 16px;flex-wrap:wrap;padding-bottom:16px}
+.sub{color:var(--muted);font-size:.95rem;margin-top:3px}
+.stats{color:var(--muted);font-size:.95rem;text-align:right}
+.stats b{color:var(--ink);font-weight:600}
+.statsbox{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+button.chip{appearance:none;border:0;cursor:pointer;font-family:inherit}
+button.chip.warn{background:var(--warn-soft);color:var(--warn)}
+button.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.drive-line{margin:0 0 6px}
+.drive-line b{font-weight:600}
+.note{color:var(--muted);font-size:.9rem;margin:10px 0 0;max-width:62ch}
+.section-gap{margin-top:34px}
+details.setup{margin-top:34px}
+details.setup>summary{cursor:pointer;font-weight:600;padding:8px 0}
+.steps{padding-left:22px;margin:8px 0 16px;color:var(--muted);font-size:.93rem;max-width:64ch}
+.steps li{margin:7px 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;background:var(--field);border:1px solid var(--line);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
+.picker{display:grid;gap:10px;margin-top:12px}
+@media (max-width:560px){.statsbox{align-items:flex-start}}
+.tabs{position:sticky;top:0;z-index:5;display:flex;gap:2px;background:var(--bg);border-bottom:1px solid var(--line);margin:0 -16px 20px;padding:0 12px;overflow-x:auto}
+.tab{appearance:none;background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-1px;padding:12px 12px 10px;font-family:inherit;font-size:.97rem;font-weight:600;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--blue)}
+.tab:hover{color:var(--ink)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px}
+.status{font-size:.85rem;color:var(--muted);margin-top:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media (max-width:560px){.grid2{grid-template-columns:1fr}}
+.field{display:block;margin-bottom:16px}
+.field>span,fieldset>legend{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px;padding:0}
+fieldset{border:0;padding:0;margin:0 0 16px;min-width:0}
+input[type="text"],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+textarea{resize:vertical;min-height:88px}
+textarea.paper{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-size:1.06rem;line-height:1.55;border-left:4px solid var(--blue)}
+.hint{display:block;font-size:.82rem;color:var(--muted);margin-top:5px;min-height:1.2em}
+.opts-note{font-size:.85rem;color:var(--muted);margin:-2px 0 10px}
+.opt{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.letter{flex:none;width:38px;height:38px;border-radius:50%;border:2px solid var(--blue);background:transparent;color:var(--blue);font-family:inherit;font-size:.95rem;font-weight:700;cursor:pointer;display:grid;place-items:center;padding:0}
+.letter[aria-pressed="true"]{background:var(--blue);color:var(--blue-ink)}
+.opt input{font-family:"Source Serif 4",Georgia,serif;font-size:1.02rem}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:6px}
+.btn{font-family:inherit;font-size:.95rem;font-weight:600;padding:10px 16px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.small{padding:6px 11px;font-size:.85rem}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.danger.armed{background:var(--danger);color:var(--surface)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.msg{margin-top:14px;padding:10px 12px;border-radius:8px;font-size:.92rem;background:var(--danger-soft);color:var(--danger)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.msg .btn{margin-left:8px}
+.recent{margin-top:28px}
+.recent h2{margin-bottom:10px}
+.mini{display:flex;gap:10px;align-items:baseline;justify-content:space-between;padding:9px 0;border-top:1px solid var(--line);font-family:"Source Serif 4",Georgia,serif;font-size:.98rem}
+.mini span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.chip{display:inline-block;padding:1px 10px;border-radius:999px;background:var(--blue-soft);color:var(--blue);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:.8rem;font-weight:600;white-space:nowrap}
+.chip.plain{background:transparent;border:1px solid var(--line);color:var(--muted)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input{flex:1 1 220px}
+.toolbar select{flex:0 1 220px}
+details.cat{border-top:1px solid var(--line)}
+details.cat:last-of-type{border-bottom:1px solid var(--line)}
+details.cat>summary{list-style:none;cursor:pointer;padding:14px 4px;display:flex;align-items:center;gap:12px;font-weight:600}
+details.cat>summary::-webkit-details-marker{display:none}
+details.cat>summary::before{content:"";flex:none;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
+details.cat[open]>summary::before{transform:rotate(45deg)}
+details.cat>summary .name{flex:1;min-width:0;overflow-wrap:anywhere}
+details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;white-space:nowrap}
+.cat-body{padding:0 0 12px 4px}
+.cat-tools{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.rename{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.rename input{flex:1 1 200px}
+.qcard{border-left:4px solid var(--blue);padding:2px 0 2px 14px;margin:0 0 20px}
+.qtext{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-size:1.06rem;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;margin-bottom:8px}
+.qtext b{font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:.9rem;color:var(--muted);margin-right:6px}
+.qopt{display:flex;gap:10px;align-items:flex-start;margin:5px 0;font-family:"Source Serif 4",Georgia,serif;font-size:1rem;line-height:1.45;overflow-wrap:anywhere;white-space:pre-wrap}
+.bub{flex:none;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:.75rem;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.qopt.correct .bub{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
+.qopt.correct{font-weight:600}
+.qmeta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.qmeta .spacer{flex:1}
+.empty{padding:28px 4px;color:var(--muted)}
+.empty .btn{margin-top:12px}
+.checks{display:grid;gap:2px}
+.check{display:flex;gap:10px;align-items:center;padding:8px 2px;cursor:pointer}
+.check input{width:20px;height:20px;flex:none;accent-color:var(--blue)}
+.check .n{margin-left:auto;color:var(--muted);font-size:.88rem;white-space:nowrap}
+.check .t{min-width:0;overflow-wrap:anywhere}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 4px}
+.summary{margin:6px 0 16px;color:var(--muted)}
+.summary b{color:var(--ink)}
+.backup{margin-top:34px}
+.backup p{color:var(--muted);font-size:.93rem;margin-bottom:12px;max-width:60ch}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);max-width:min(92vw,520px);background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:10px;font-size:.93rem;box-shadow:0 6px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+.toast.err{background:var(--danger);color:#fff}
+[hidden]{display:none !important}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Fitter Question Bank</h1>
+      <p class="sub">Add MCQs by topic, keep them in your Google Drive, and print an exam-style PDF.</p>
+    </div>
+    <div class="statsbox">
+      <p class="stats" id="stats" aria-live="polite"></p>
+      <button type="button" class="chip plain" id="drive-chip">Google Drive</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button class="tab" role="tab" id="tab-btn-add" aria-controls="tab-add" aria-selected="true" data-tab="add">Add question</button>
+    <button class="tab" role="tab" id="tab-btn-bank" aria-controls="tab-bank" aria-selected="false" data-tab="bank">Question bank</button>
+    <button class="tab" role="tab" id="tab-btn-pdf" aria-controls="tab-pdf" aria-selected="false" data-tab="pdf">Make PDF</button>
+    <button class="tab" role="tab" id="tab-btn-drive" aria-controls="tab-drive" aria-selected="false" data-tab="drive">Google Drive</button>
+  </nav>
+
+  <main>
+    <!-- ADD -->
+    <section id="tab-add" role="tabpanel" aria-labelledby="tab-btn-add">
+      <form id="qform" class="card" autocomplete="off" novalidate>
+        <h2 id="form-title">New question</h2>
+        <p class="hint" style="margin-bottom:16px">Category and reference stay filled after you save, so you can add a whole set in a row.</p>
+        <div class="grid2">
+          <label class="field"><span>Topic category</span>
+            <input type="text" id="f-cat" list="dl-cats" placeholder="e.g. Measuring instruments" maxlength="80">
+            <small class="hint" id="cat-hint"></small>
+          </label>
+          <label class="field"><span>Reference</span>
+            <input type="text" id="f-ref" list="dl-refs" placeholder="e.g. ISRO 2026" maxlength="80">
+            <small class="hint">Paper or source this question came from.</small>
+          </label>
+        </div>
+        <datalist id="dl-cats"></datalist>
+        <datalist id="dl-refs"></datalist>
+
+        <label class="field"><span>Question</span>
+          <textarea id="f-q" class="paper" rows="3" placeholder="Type the question exactly as it appears"></textarea>
+        </label>
+
+        <fieldset>
+          <legend>Options</legend>
+          <p class="opts-note">Tap a letter to mark the correct answer. A filled circle means correct. You can leave it unmarked.</p>
+          <div class="opt"><button type="button" class="letter" data-i="0" aria-pressed="false" aria-label="Mark option A as correct">A</button><input type="text" id="f-o0" placeholder="Option A" aria-label="Option A"></div>
+          <div class="opt"><button type="button" class="letter" data-i="1" aria-pressed="false" aria-label="Mark option B as correct">B</button><input type="text" id="f-o1" placeholder="Option B" aria-label="Option B"></div>
+          <div class="opt"><button type="button" class="letter" data-i="2" aria-pressed="false" aria-label="Mark option C as correct">C</button><input type="text" id="f-o2" placeholder="Option C" aria-label="Option C"></div>
+          <div class="opt"><button type="button" class="letter" data-i="3" aria-pressed="false" aria-label="Mark option D as correct">D</button><input type="text" id="f-o3" placeholder="Option D" aria-label="Option D"></div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" class="btn primary" id="btn-save">Add question</button>
+          <button type="button" class="btn" id="btn-clear">Clear question</button>
+          <button type="button" class="btn" id="btn-cancel-edit" hidden>Cancel edit</button>
+          <span class="hint" style="margin:0">Ctrl + Enter also saves</span>
+        </div>
+        <div id="form-msg" role="alert" hidden></div>
+      </form>
+
+      <div class="recent" id="recent" hidden>
+        <h2>Added in this session</h2>
+        <div id="recent-list"></div>
+      </div>
+    </section>
+
+    <!-- BANK -->
+    <section id="tab-bank" role="tabpanel" aria-labelledby="tab-btn-bank" hidden>
+      <div class="toolbar">
+        <input type="text" id="b-search" placeholder="Search questions, options or references" aria-label="Search questions">
+        <select id="b-cat" aria-label="Filter by category"></select>
+      </div>
+      <div id="bank-list"></div>
+    </section>
+
+    <!-- PDF -->
+    <section id="tab-pdf" role="tabpanel" aria-labelledby="tab-btn-pdf" hidden>
+      <div class="card">
+        <h2>Exam-style PDF</h2>
+        <p class="hint" style="margin-bottom:16px">Questions are grouped into one section per category and numbered in order, with the reference shown beside each question.</p>
+        <label class="field"><span>Paper title</span>
+          <input type="text" id="p-title" value="Fitter (ITI) Practice Paper" maxlength="90">
+        </label>
+        <fieldset>
+          <legend>Categories to include</legend>
+          <div class="checks" id="p-cats"></div>
+          <div class="row">
+            <button type="button" class="btn small" id="p-all">Select all</button>
+            <button type="button" class="btn small" id="p-none">Select none</button>
+          </div>
+        </fieldset>
+        <label class="field"><span>Only questions from this reference</span>
+          <select id="p-ref"></select>
+        </label>
+        <label class="check" style="margin-bottom:8px"><input type="checkbox" id="p-key" checked><span class="t">Add an answer key on the last page</span></label>
+        <p class="summary" id="p-summary" aria-live="polite"></p>
+        <button type="button" class="btn primary" id="btn-pdf">Download PDF</button>
+        <p class="hint" id="pdf-note"></p>
+      </div>
+
+    </section>
+
+    <!-- DRIVE -->
+    <section id="tab-drive" role="tabpanel" aria-labelledby="tab-btn-drive" hidden>
+      <div class="card">
+        <h2>Google Drive</h2>
+        <p class="drive-line" id="drive-status"></p>
+        <div class="row">
+          <button type="button" class="btn primary" id="btn-connect">Connect Google Drive</button>
+          <button type="button" class="btn" id="btn-sync" hidden>Sync now</button>
+          <button type="button" class="btn" id="btn-disconnect" hidden>Disconnect</button>
+        </div>
+        <p class="note">Your questions are kept in one file, <b>fitter-question-bank.json</b>, in My Drive. A change is saved to Drive a few seconds after you make it, and your other devices pick it up within about 30 seconds. Everything is also kept on this device, so you can keep working offline.</p>
+      </div>
+
+      <details class="setup" id="setup">
+        <summary>Google Cloud setup (one time)</summary>
+        <ol class="steps">
+          <li>In <b>Google Cloud Console</b>, create a project and turn on the <b>Google Drive API</b> under APIs &amp; Services, then Library.</li>
+          <li>Open <b>OAuth consent screen</b>, choose External, fill in the app name and your email, and add your own Google account as a <b>test user</b>.</li>
+          <li>Open <b>Credentials</b>, choose Create credentials, then <b>OAuth client ID</b>, type <b>Web application</b>. Under <b>Authorized JavaScript origins</b> add <code id="origin-hint">this site&rsquo;s address</code> (no path, no trailing slash).</li>
+          <li>Copy the client ID below and save it. To use it on every device, paste it into the <code>GOOGLE_CLIENT_ID</code> line at the top of <code>index.html</code> instead.</li>
+        </ol>
+        <div id="cid-field">
+          <label class="field"><span>OAuth client ID</span>
+            <input type="text" id="cid-input" placeholder="1234567890-abcdef.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+          </label>
+          <div class="row"><button type="button" class="btn small" id="btn-cid-save">Save client ID</button></div>
+        </div>
+        <p class="note" id="cid-fixed" hidden>The client ID is set inside index.html.</p>
+      </details>
+
+      <section class="backup">
+        <h2>Backup file on this device</h2>
+        <p>Download all questions as a file, or restore from one. Files from the earlier version of this tool work too.</p>
+        <div class="row">
+          <button type="button" class="btn" id="btn-export">Download backup</button>
+          <button type="button" class="btn" id="btn-import">Restore from backup</button>
+          <input type="file" id="file-import" accept="application/json,.json" hidden>
+        </div>
+      </section>
+    </section>
+  </main>
+  <p class="status" id="storage-status"></p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ==PDF-BUILDER-START== */
+function buildPdf(JsPDF, sections, opts){
+  var doc = new JsPDF({unit:'mm', format:'a4', orientation:'portrait', compress:true});
+  var W=210, H=297, L=18, R=18, T=24, B=20;
+  var CW = W-L-R, BOTTOM = H-B, PT = 0.3528;
+  var QSIZE=11.5, OSIZE=11, NUMW=9, LABW=8;
+  var LETTERS=['A','B','C','D'];
+  var replaced = 0;
+
+  var MAP = {
+    '\u03A9':'ohm','\u2126':'ohm','\u03BC':'\u00B5','\u03C0':'pi','\u0394':'delta','\u03B4':'delta','\u03B1':'alpha','\u03B2':'beta',
+    '\u03B8':'theta','\u03C3':'sigma','\u03C1':'rho','\u03BB':'lambda','\u03B7':'eta','\u03C6':'phi','\u03A6':'phi','\u03C4':'tau',
+    '\u03B5':'epsilon','\u03B3':'gamma','\u03C9':'omega','\u2265':'>=','\u2264':'<=','\u2260':'!=','\u2248':'~','\u2192':'->','\u2190':'<-',
+    '\u2191':'^','\u221E':'infinity','\u221A':'sqrt','\u2205':'\u00D8','\u2300':'\u00D8','\u2032':"'",'\u2033':'"','\u2018':"'",'\u2019':"'",
+    '\u201C':'"','\u201D':'"','\u2013':'-','\u2014':'-','\u2212':'-','\u2026':'...','\u2022':'*','\u00A0':' ','\u2009':' ','\u202F':' ',
+    '\u20B9':'Rs.','\u20AC':'EUR','\u2074':'^4','\u2075':'^5','\u2076':'^6','\u2077':'^7','\u2078':'^8','\u2079':'^9','\u2070':'^0','\u207B':'-',
+    '\u2080':'0','\u2081':'1','\u2082':'2','\u2083':'3','\u2084':'4','\u2085':'5','\u2086':'6','\u2087':'7','\u2088':'8','\u2089':'9',
+    '\u2234':':.','\u00D7':'\u00D7','\u200B':'','\u200C':'','\u200D':'','\uFEFF':'','\uFE0F':''
+  };
+  function clean(s){
+    s = String(s==null?'':s).replace(/\r\n?/g,'\n');
+    var out='';
+    for (var ch of s){
+      if (ch==='\n'){ out+=ch; continue; }
+      if (Object.prototype.hasOwnProperty.call(MAP,ch)){ out+=MAP[ch]; continue; }
+      var c = ch.codePointAt(0);
+      if (c===9){ out+='    '; continue; }
+      if (c<32 || (c>=127 && c<160)) continue;
+      if (c<=255){ out+=ch; continue; }
+      out+='?'; replaced++;
+    }
+    return out;
+  }
+  function setF(style,size){ doc.setFont('times',style); doc.setFontSize(size); }
+  function lh(pt){ return pt*PT*1.32; }
+  function base(pt){ return pt*PT*0.95; }
+
+  var y = T, qn = 0;
+  function newPage(){ doc.addPage(); y = T; }
+  function ensure(h){ if (y + h > BOTTOM + 0.01) newPage(); }
+
+  function layout(q){
+    var qx = L+NUMW, qw = CW-NUMW, ow = CW-NUMW;
+    setF('normal', QSIZE);
+    var qLines = doc.splitTextToSize(clean(q.q), qw);
+    var ref = q.ref ? '['+clean(q.ref)+']' : '';
+    setF('italic', 9);
+    var refW = ref ? doc.getTextWidth(ref) : 0;
+    setF('normal', QSIZE);
+    var lastW = doc.getTextWidth(qLines[qLines.length-1] || '');
+    var refInline = !!ref && (lastW + refW + 6 <= qw);
+    var refOwn = !!ref && !refInline;
+
+    var opts = q.o.map(clean);
+    setF('normal', OSIZE);
+    var widths = opts.map(function(t){
+      return LABW + Math.max.apply(null, t.split('\n').map(function(s){ return doc.getTextWidth(s); }));
+    });
+    var hasNL = opts.some(function(t){ return t.indexOf('\n')>=0; });
+    var maxW = Math.max.apply(null, widths);
+    var mode = 'v';
+    if (!hasNL){
+      if (maxW + 4 <= ow/4) mode = '4';
+      else if (maxW + 4 <= ow/2) mode = '2';
+    }
+    var optLines = null, optH = 0;
+    if (mode==='4') optH = lh(OSIZE);
+    else if (mode==='2') optH = 2*lh(OSIZE);
+    else {
+      optLines = opts.map(function(t){ return doc.splitTextToSize(t, ow-LABW); });
+      optLines.forEach(function(ls){ optH += ls.length*lh(OSIZE) + 0.8; });
+    }
+    var h = qLines.length*lh(QSIZE) + (refOwn ? lh(9) : 0) + 1.6 + optH + 4.5;
+    return {qLines:qLines, ref:ref, refInline:refInline, refOwn:refOwn, opts:opts, mode:mode, optLines:optLines, height:h};
+  }
+
+  function drawQuestion(q, n, lay){
+    var qx = L+NUMW, ow = CW-NUMW;
+    var usable = BOTTOM - T;
+    if (lay.height <= usable && y + lay.height > BOTTOM) newPage();
+    doc.setTextColor(0);
+    lay.qLines.forEach(function(ln, i){
+      ensure(lh(QSIZE));
+      var by = y + base(QSIZE);
+      if (i===0){ setF('bold', QSIZE); doc.text(n+'.', L, by); }
+      setF('normal', QSIZE); doc.text(ln, qx, by);
+      if (lay.refInline && i===lay.qLines.length-1){
+        setF('italic', 9); doc.setTextColor(90); doc.text(lay.ref, W-R, by, {align:'right'}); doc.setTextColor(0);
+      }
+      y += lh(QSIZE);
+    });
+    if (lay.refOwn){
+      ensure(lh(9));
+      setF('italic', 9); doc.setTextColor(90); doc.text(lay.ref, W-R, y + base(9), {align:'right'}); doc.setTextColor(0);
+      y += lh(9);
+    }
+    y += 1.6;
+    setF('normal', OSIZE);
+    if (lay.mode==='4' || lay.mode==='2'){
+      var perRow = lay.mode==='4' ? 4 : 2, colW = ow/perRow, rows = lay.mode==='4' ? 1 : 2;
+      ensure(rows*lh(OSIZE));
+      for (var r=0; r<rows; r++){
+        for (var c=0; c<perRow; c++){
+          var i = r*perRow + c, x = qx + c*colW, by2 = y + base(OSIZE);
+          setF('normal', OSIZE);
+          doc.text('('+LETTERS[i]+')', x, by2);
+          doc.text(lay.opts[i], x+LABW, by2);
+        }
+        y += lh(OSIZE);
+      }
+    } else {
+      lay.opts.forEach(function(t, i){
+        lay.optLines[i].forEach(function(ln, k){
+          ensure(lh(OSIZE));
+          setF('normal', OSIZE);
+          var by3 = y + base(OSIZE);
+          if (k===0) doc.text('('+LETTERS[i]+')', qx, by3);
+          doc.text(ln, qx+LABW, by3);
+          y += lh(OSIZE);
+        });
+        y += 0.8;
+      });
+    }
+    y += 4.5;
+  }
+
+  var total = sections.reduce(function(s, x){ return s + x.questions.length; }, 0);
+  var title = clean(opts.title || 'Practice Paper').replace(/\n/g,' ');
+
+  /* Title block */
+  setF('bold', 18);
+  var tLines = doc.splitTextToSize(title, CW);
+  tLines.forEach(function(ln){ doc.text(ln, W/2, y + base(18), {align:'center'}); y += lh(18); });
+  y += 1;
+  doc.setDrawColor(20); doc.setLineWidth(0.6); doc.line(L, y, W-R, y);
+  doc.setLineWidth(0.15); doc.line(L, y+1.2, W-R, y+1.2);
+  y += 5.5;
+  setF('normal', 10);
+  var dateStr = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'});
+  doc.text('Total questions: '+total, L, y + base(10));
+  doc.text('Sections: '+sections.length, W/2, y + base(10), {align:'center'});
+  doc.text('Date: '+dateStr, W-R, y + base(10), {align:'right'});
+  y += lh(10) + 2;
+  setF('italic', 9.5);
+  var ins = doc.splitTextToSize('Instructions: Each question has four options. Choose the one correct answer.', CW);
+  ins.forEach(function(ln){ doc.text(ln, L, y + base(9.5)); y += lh(9.5); });
+  y += 2;
+  doc.setLineWidth(0.15); doc.line(L, y, W-R, y);
+  y += 7;
+
+  var key = [];
+  sections.forEach(function(sec, si){
+    var hh = 8.5;
+    var firstLay = layout(sec.questions[0]);
+    var need = hh + 3.5 + Math.min(firstLay.height, BOTTOM - T - hh - 3.5);
+    ensure(need);
+    doc.setFillColor(233,237,241); doc.rect(L, y, CW, hh, 'F');
+    doc.setFillColor(31,78,140); doc.rect(L, y, 1.8, hh, 'F');
+    var letter = si < 26 ? String.fromCharCode(65+si) : String(si+1);
+    setF('bold', 11.5); doc.setTextColor(20,33,43);
+    var nm = doc.splitTextToSize('SECTION '+letter+':  '+clean(sec.name).replace(/\n/g,' '), CW-45)[0];
+    doc.text(nm, L+5, y + hh*0.68);
+    setF('normal', 9.5);
+    doc.text(sec.questions.length+(sec.questions.length===1?' question':' questions'), W-R-2, y + hh*0.68, {align:'right'});
+    doc.setTextColor(0);
+    y += hh + 3.5;
+
+    var entries = [];
+    sec.questions.forEach(function(q, qi){
+      qn++;
+      var lay = qi===0 ? firstLay : layout(q);
+      drawQuestion(q, qn, lay);
+      entries.push({n:qn, a:(q.a>=0 && q.a<4) ? LETTERS[q.a] : '-'});
+    });
+    key.push({name:sec.name, letter:letter, entries:entries});
+    y += 2;
+  });
+
+  /* Answer key */
+  if (opts.answerKey){
+    newPage();
+    setF('bold', 15); doc.text('ANSWER KEY', W/2, y + base(15), {align:'center'});
+    y += lh(15) + 1;
+    doc.setLineWidth(0.4); doc.line(L, y, W-R, y);
+    y += 6;
+    key.forEach(function(k){
+      ensure(9 + 6.2);
+      setF('bold', 11);
+      var kn = doc.splitTextToSize('Section '+k.letter+':  '+clean(k.name).replace(/\n/g,' '), CW)[0];
+      doc.text(kn, L, y + base(11));
+      y += 7;
+      var cols = 6, colW = CW/cols, rowH = 6.2, col = 0;
+      k.entries.forEach(function(e){
+        if (col===0) ensure(rowH);
+        var x = L + col*colW + 1, by = y + rowH*0.7;
+        setF('normal', 10.5);
+        var num = e.n+'.  ';
+        doc.text(num, x, by);
+        var nw = doc.getTextWidth(num);
+        setF('bold', 10.5);
+        doc.text(e.a, x+nw, by);
+        col++;
+        if (col===cols){ col=0; y += rowH; }
+      });
+      if (col!==0) y += rowH;
+      y += 4;
+    });
+  }
+
+  /* Headers and footers */
+  var pages = doc.getNumberOfPages();
+  for (var p=1; p<=pages; p++){
+    doc.setPage(p);
+    if (p>1){
+      setF('italic', 8.5); doc.setTextColor(90);
+      doc.text(doc.splitTextToSize(title, CW-10)[0], L, 13);
+      doc.setDrawColor(150); doc.setLineWidth(0.15); doc.line(L, 15.5, W-R, 15.5);
+    }
+    setF('normal', 9); doc.setTextColor(90);
+    doc.text('Page '+p+' of '+pages, W/2, H-10, {align:'center'});
+    doc.setTextColor(0);
+  }
+  try { doc.setProperties({title: title}); } catch(e){}
+  return {doc:doc, replaced:replaced};
+}
+/* ==PDF-BUILDER-END== */
+</script>
+
+<script>
+(function(){
+'use strict';
+
+var LET = ['A','B','C','D'];
+/* Paste your Google OAuth client ID between the quotes to use it on every device. */
+var GOOGLE_CLIENT_ID = '';
+
+var state = {
+  cats: [], tomb: {c:{}, q:{}}, tab: 'add',
+  editing: null, correct: -1, dupOk: false,
+  session: [], open: {}, deselected: {},
+  rev: 0, dirty: false, drive: {fileId: null, version: null, lastSync: 0}
+};
+
+function $(s, r){ return (r||document).querySelector(s); }
+function el(tag, props){
+  var n = document.createElement(tag);
+  if (props) Object.keys(props).forEach(function(k){
+    var v = props[k];
+    if (v==null || v===false) return;
+    if (k==='class') n.className = v;
+    else if (k==='text') n.textContent = v;
+    else if (k.slice(0,2)==='on') n.addEventListener(k.slice(2), v);
+    else if (v===true) n.setAttribute(k,'');
+    else n.setAttribute(k, v);
+  });
+  for (var i=2; i<arguments.length; i++){
+    var kids = [].concat(arguments[i]);
+    kids.forEach(function(c){
+      if (c==null || c===false) return;
+      n.append(c && c.nodeType ? c : document.createTextNode(String(c)));
+    });
+  }
+  return n;
+}
+function norm(s){ return String(s||'').toLowerCase().replace(/\s+/g,' ').trim(); }
+function tidy(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
+function uid(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function plural(n, one, many){ return n + ' ' + (n===1 ? one : (many || one+'s')); }
+function sortedCats(){
+  return state.cats.slice().sort(function(a,b){ return (a.order-b.order) || a.name.localeCompare(b.name); });
+}
+function findCat(name){ var k = norm(name); return state.cats.filter(function(c){ return norm(c.name)===k; })[0] || null; }
+function totalQuestions(){ return state.cats.reduce(function(s,c){ return s + c.questions.length; }, 0); }
+function allRefs(){
+  var seen = {};
+  state.cats.forEach(function(c){ c.questions.forEach(function(q){ if (q.ref) seen[q.ref] = true; }); });
+  return Object.keys(seen).sort(function(a,b){ return a.localeCompare(b); });
+}
+function sizeOf(o){ try { return new TextEncoder().encode(JSON.stringify(o)).length; } catch(e){ return JSON.stringify(o).length; } }
+function slug(s){ return (String(s||'paper').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'paper'); }
+
+function toast(msg, kind){
+  var t = $('#toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (kind==='error' ? ' err' : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function(){ t.className = 'toast'; }, kind==='error' ? 6500 : 2800);
+}
+
+/* ---------- Storage (this device) ---------- */
+var LS_STATE = 'fqb-state-v2', LS_CID = 'fqb-client-id', LS_FLAG = 'fqb-connected';
+var TOMB_TTL = 120 * 24 * 3600 * 1000;
+
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); return true; } catch(e){ return false; } }
+function lsDel(k){ try { localStorage.removeItem(k); } catch(e){} }
+
+function cloneQ(q){
+  var o = Array.isArray(q.o) ? q.o.slice(0,4).map(String) : ['','','',''];
+  while (o.length < 4) o.push('');
+  return { id: String(q.id || uid('q')), q: String(q.q||''), o: o,
+    a: (Number.isInteger(q.a) && q.a>=0 && q.a<4) ? q.a : -1, ref: String(q.ref||''),
+    t: Number(q.t)||0, u: Number(q.u)||Number(q.t)||0 };
+}
+function readCat(x){
+  if (!x || typeof x !== 'object') return null;
+  return { id: String(x.id || uid('c')), name: String(x.name||'Untitled'), order: Number(x.order)||0, u: Number(x.u)||0,
+    questions: Array.isArray(x.questions) ? x.questions.map(cloneQ) : [] };
+}
+function readData(d){
+  var cats = d && Array.isArray(d.cats) ? d.cats : (d && Array.isArray(d.categories) ? d.categories : []);
+  var t = (d && d.tomb) || {};
+  return { cats: cats.map(readCat).filter(Boolean), tomb: { c: Object.assign({}, t.c), q: Object.assign({}, t.q) } };
+}
+function pruneTomb(){
+  var cut = Date.now() - TOMB_TTL;
+  ['c','q'].forEach(function(k){ Object.keys(state.tomb[k]).forEach(function(id){ if ((Number(state.tomb[k][id])||0) < cut) delete state.tomb[k][id]; }); });
+}
+function serialize(){
+  pruneTomb();
+  return JSON.stringify({ app:'fitter-question-bank', version:2, savedAt:new Date().toISOString(),
+    categories: sortedCats().map(function(c){ return { id:c.id, name:c.name, order:c.order, u:c.u, questions:c.questions }; }),
+    tomb: state.tomb }, null, 2);
+}
+var saveWarned = false;
+function saveLocal(){
+  var ok = lsSet(LS_STATE, JSON.stringify({ cats: state.cats, tomb: state.tomb, dirty: state.dirty, drive: state.drive }));
+  if (!ok && !saveWarned){ saveWarned = true; toast('This browser blocked saving on the device. Keep the page connected to Google Drive.', 'error'); }
+}
+function loadLocal(){
+  try {
+    var raw = lsGet(LS_STATE), d = raw ? JSON.parse(raw) : null;
+    if (d){
+      var r = readData(d);
+      state.cats = r.cats; state.tomb = r.tomb;
+      state.dirty = !!d.dirty;
+      if (d.drive) state.drive = { fileId: d.drive.fileId || null, version: d.drive.version || null, lastSync: Number(d.drive.lastSync)||0 };
+    }
+  } catch(e){ state.cats = []; }
+}
+function changed(){
+  state.rev++; state.dirty = true; saveLocal(); scheduleSync();
+}
+function persist(cat){ cat.u = Date.now(); changed(); }
+function persistDelete(id){ state.tomb.c[id] = Date.now(); changed(); }
+function newCat(name){
+  var c = { id: uid('c'), name: tidy(name), order: Date.now(), u: Date.now(), questions: [] };
+  state.cats.push(c);
+  return c;
+}
+function fitsIn(){ return true; }
+
+/* ---------- Merge (used when two devices changed the bank) ---------- */
+function mergeData(a, b){
+  var tomb = {c:{}, q:{}};
+  [a,b].forEach(function(d){
+    ['c','q'].forEach(function(k){
+      Object.keys(d.tomb[k] || {}).forEach(function(id){ tomb[k][id] = Math.max(tomb[k][id]||0, Number(d.tomb[k][id])||0); });
+    });
+  });
+  var catBy = {};
+  [a,b].forEach(function(d){ d.cats.forEach(function(c){
+    if (tomb.c[c.id] && tomb.c[c.id] >= (c.u||0)) return;
+    var cur = catBy[c.id];
+    if (!cur || (c.u||0) > (cur.u||0)) catBy[c.id] = { id:c.id, name:c.name, order:c.order, u:c.u||0, questions:[] };
+  }); });
+  var alias = {}, byName = {};
+  Object.keys(catBy).sort(function(x,y){ return (catBy[x].order - catBy[y].order) || (x < y ? -1 : 1); }).forEach(function(id){
+    var k = norm(catBy[id].name);
+    if (byName[k]){ alias[id] = byName[k]; delete catBy[id]; } else byName[k] = id;
+  });
+  var win = {};
+  [a,b].forEach(function(d){ d.cats.forEach(function(c){ c.questions.forEach(function(q){
+    var u = q.u || q.t || 0;
+    if (tomb.q[q.id] && tomb.q[q.id] >= u) return;
+    var cid = alias[c.id] || c.id;
+    if (!catBy[cid]) return;
+    var cur = win[q.id];
+    if (!cur || u >= (cur.q.u || cur.q.t || 0)) win[q.id] = { q:q, cid:cid };
+  }); }); });
+  Object.keys(win).forEach(function(id){ catBy[win[id].cid].questions.push(win[id].q); });
+  var cats = Object.keys(catBy).map(function(id){
+    var c = catBy[id]; c.questions.sort(function(x,y){ return (x.t||0) - (y.t||0); }); return c;
+  });
+  return { cats: cats, tomb: tomb };
+}
+
+/* ---------- Files on this device ---------- */
+async function saveFile(filename, data){
+  try {
+    var type = /\.pdf$/i.test(filename) ? 'application/pdf' : 'application/json';
+    var url = URL.createObjectURL(new Blob([data], {type: type}));
+    var a = el('a', {href: url, download: filename});
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+    return true;
+  } catch(e){
+    toast('Could not save the file.', 'error');
+    return false;
+  }
+}
+
+/* ---------- Google sign-in ---------- */
+var SCOPE = 'https://www.googleapis.com/auth/drive.file';
+var FILE_NAME = 'fitter-question-bank.json';
+var tok = { value: null, exp: 0 };
+var tokenClient = null, tokenWaiter = null;
+var AUTH_CODES = { interaction_required:1, popup_failed_to_open:1, popup_closed:1, access_denied:1, immediate_failed:1,
+  auth:1, auth_failed:1, invalid_request:1, invalid_client:1, unauthorized_client:1, redirect_uri_mismatch:1, origin_mismatch:1, timeout:1 };
+
+function clientId(){ return String(GOOGLE_CLIENT_ID || lsGet(LS_CID) || '').trim(); }
+function isConnected(){ return !!lsGet(LS_FLAG) && !!clientId(); }
+function gisReady(){ return !!(window.google && google.accounts && google.accounts.oauth2); }
+function haveToken(){ return !!tok.value && Date.now() < tok.exp - 60000; }
+function whenGis(cb){
+  var tries = 0;
+  (function wait(){
+    if (gisReady()) return cb(true);
+    if (++tries > 50) return cb(false);
+    setTimeout(wait, 200);
+  })();
+}
+function initTokenClient(){
+  if (tokenClient) return true;
+  var id = clientId();
+  if (!id || !gisReady()) return false;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: id, scope: SCOPE,
+    callback: function(resp){
+      var w = tokenWaiter; tokenWaiter = null;
+      if (resp && resp.access_token){
+        tok.value = resp.access_token; tok.exp = Date.now() + (Number(resp.expires_in)||3600) * 1000;
+        lsSet(LS_FLAG, '1');
+        if (w) w.resolve(tok.value);
+      } else if (w) w.reject({ code: (resp && resp.error) || 'auth_failed', message: resp && (resp.error_description || resp.error) });
+    },
+    error_callback: function(err){
+      var w = tokenWaiter; tokenWaiter = null;
+      if (w) w.reject({ code: (err && err.type) || 'auth_failed', message: err && err.message });
+    }
+  });
+  return true;
+}
+function requestToken(prompt){
+  return new Promise(function(resolve, reject){
+    if (!initTokenClient()) return reject({ code: 'not_ready' });
+    if (tokenWaiter) return reject({ code: 'busy' });
+    var timer = setTimeout(function(){ if (tokenWaiter){ tokenWaiter = null; reject({ code: 'timeout' }); } }, 90000);
+    tokenWaiter = {
+      resolve: function(v){ clearTimeout(timer); resolve(v); },
+      reject: function(e){ clearTimeout(timer); reject(e); }
+    };
+    try { tokenClient.requestAccessToken({ prompt: prompt }); }
+    catch(e){ clearTimeout(timer); tokenWaiter = null; reject({ code: 'auth_failed', message: e && e.message }); }
+  });
+}
+function getToken(){
+  if (haveToken()) return Promise.resolve(tok.value);
+  return requestToken('none');
+}
+
+/* ---------- Google Drive API ---------- */
+function googleMessage(body){
+  try { var j = JSON.parse(body); return (j.error && (j.error.message || j.error.status)) || ''; } catch(e){ return ''; }
+}
+async function gfetch(url, opts, retried){
+  var t = await getToken();
+  opts = opts || {};
+  opts.headers = Object.assign({ Authorization: 'Bearer ' + t }, opts.headers || {});
+  var r;
+  try { r = await fetch(url, opts); }
+  catch(e){ throw { code: 'network', message: 'No connection to Google.' }; }
+  if (r.status === 401){
+    tok.value = null;
+    if (!retried) return gfetch(url, opts, true);
+    throw { code: 'auth', message: 'Google no longer accepts the sign-in.' };
+  }
+  if (!r.ok){
+    var body = ''; try { body = await r.text(); } catch(e){}
+    throw { code: 'http_' + r.status, status: r.status, message: googleMessage(body) || ('Google Drive returned ' + r.status + '.') };
+  }
+  return r;
+}
+async function findFile(){
+  var q = "name = '" + FILE_NAME + "' and trashed = false";
+  var r = await gfetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) +
+    '&fields=' + encodeURIComponent('files(id,version,modifiedTime)') + '&orderBy=' + encodeURIComponent('modifiedTime desc') + '&pageSize=10');
+  var j = await r.json();
+  return (j.files && j.files[0]) || null;
+}
+async function fileMeta(id){
+  var r = await gfetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?fields=' + encodeURIComponent('id,version,modifiedTime,trashed'));
+  return r.json();
+}
+async function downloadFile(id){
+  var r = await gfetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media');
+  return r.text();
+}
+async function createFile(text){
+  var b = 'fqb' + Math.random().toString(36).slice(2);
+  var body = '--' + b + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
+    JSON.stringify({ name: FILE_NAME, mimeType: 'application/json' }) +
+    '\r\n--' + b + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + text + '\r\n--' + b + '--';
+  var r = await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=' + encodeURIComponent('id,version,modifiedTime'),
+    { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: body });
+  return r.json();
+}
+async function updateFile(id, text){
+  var r = await gfetch('https://www.googleapis.com/upload/drive/v3/files/' + encodeURIComponent(id) + '?uploadType=media&fields=' + encodeURIComponent('id,version,modifiedTime'),
+    { method: 'PATCH', headers: { 'Content-Type': 'application/json; charset=UTF-8' }, body: text });
+  return r.json();
+}
+
+/* ---------- Sync ---------- */
+var sync = { timer: null, running: false, again: false, status: 'idle', msg: '' };
+
+function setStatus(s, msg){ sync.status = s; sync.msg = msg || ''; renderDrive(); }
+function scheduleSync(delay){
+  if (!isConnected() || sync.status === 'needlogin' || sync.status === 'noclient') { if (sync.running) sync.again = true; return; }
+  clearTimeout(sync.timer);
+  if (sync.running){ sync.again = true; return; }
+  setStatus('pending');
+  sync.timer = setTimeout(function(){ runSync(); }, delay == null ? 3000 : delay);
+}
+async function runSync(){
+  if (!isConnected()) return;
+  if (sync.running){ sync.again = true; return; }
+  clearTimeout(sync.timer);
+  sync.running = true;
+  setStatus('syncing');
+  try {
+    await doSync();
+    setStatus('synced');
+  } catch(e){
+    handleSyncError(e);
+  } finally {
+    sync.running = false;
+    if (sync.again){ sync.again = false; if (sync.status === 'synced') scheduleSync(800); }
+  }
+}
+function parseRemote(text){
+  var j;
+  try { j = JSON.parse(text); } catch(e){ throw { code: 'bad_remote', message: 'The file in Drive is not valid JSON, so sync stopped. Fix or delete ' + FILE_NAME + ' in Drive, then try again.' }; }
+  if (!j || j.app !== 'fitter-question-bank') throw { code: 'bad_remote', message: 'The file in Drive is not a Fitter Question Bank file, so sync stopped.' };
+  return readData(j);
+}
+async function doSync(){
+  var d = state.drive, file = null;
+  if (d.fileId){
+    try {
+      file = await fileMeta(d.fileId);
+      if (file.trashed){ file = null; d.fileId = null; d.version = null; }
+    } catch(e){
+      if (e.status === 404){ file = null; d.fileId = null; d.version = null; } else throw e;
+    }
+  }
+  if (!file){
+    file = await findFile();
+    if (file) d.fileId = file.id;
+  }
+  if (!file){
+    var rev0 = state.rev;
+    var made = await createFile(serialize());
+    d.fileId = made.id; d.version = made.version; d.lastSync = Date.now();
+    if (state.rev === rev0) state.dirty = false;
+    saveLocal(); renderAll();
+    return;
+  }
+  if (file.version !== d.version){
+    var remote = parseRemote(await downloadFile(file.id));
+    if (state.dirty || (!d.version && state.cats.length)){
+      var m = mergeData({ cats: state.cats, tomb: state.tomb }, remote);
+      state.cats = m.cats; state.tomb = m.tomb; state.dirty = true; state.rev++;
+    } else {
+      state.cats = remote.cats; state.tomb = remote.tomb;
+    }
+    d.version = file.version;
+    saveLocal(); renderAll();
+  }
+  if (state.dirty){
+    var rev1 = state.rev;
+    var up = await updateFile(file.id, serialize());
+    d.version = up.version;
+    if (state.rev === rev1) state.dirty = false;
+  }
+  d.lastSync = Date.now();
+  saveLocal(); renderAll();
+}
+function handleSyncError(e){
+  var c = e && e.code, m = e && e.message;
+  if (c === 'not_ready') return setStatus(clientId() ? 'error' : 'noclient', clientId() ? 'Google sign-in is still loading. Try again in a moment.' : '');
+  if (c === 'busy') return setStatus('idle');
+  if (c === 'network') return setStatus('offline', 'No connection. Your changes are safe on this device and will sync when you are back online.');
+  if (c === 'origin_mismatch' || c === 'redirect_uri_mismatch' || c === 'invalid_client' || c === 'unauthorized_client')
+    return setStatus('needlogin', 'Google did not accept this client ID or website address. Check the Google Cloud setup below.');
+  if (AUTH_CODES[c]) return setStatus('needlogin', 'Sign in again to keep syncing. Your changes are safe on this device.');
+  if (c === 'http_403') return setStatus('error', (m || 'Google Drive refused the request.') + ' Check that the Google Drive API is turned on in your Google Cloud project.');
+  if (c === 'bad_remote') return setStatus('error', m);
+  setStatus('error', 'Google Drive said: ' + (m || c || 'unknown error'));
+}
+async function connectClick(){
+  if (!clientId()){
+    $('#setup').open = true; $('#cid-input').focus();
+    toast('Add your Google client ID first.', 'error'); return;
+  }
+  if (!gisReady()){ toast('Google sign-in is still loading. Try again in a moment.', 'error'); return; }
+  setStatus('connecting');
+  try { await requestToken(''); }
+  catch(e){ handleSyncError(e); return; }
+  runSync();
+}
+function disconnect(){
+  try { if (tok.value && gisReady()) google.accounts.oauth2.revoke(tok.value, function(){}); } catch(e){}
+  tok.value = null; tok.exp = 0;
+  lsDel(LS_FLAG);
+  state.drive = { fileId: null, version: null, lastSync: 0 };
+  saveLocal();
+  setStatus('signedout');
+  toast('Disconnected. Your questions stay on this device.');
+}
+function initSync(){
+  if (!clientId()) return setStatus('noclient');
+  if (!lsGet(LS_FLAG)) return setStatus('signedout');
+  setStatus('connecting');
+  whenGis(function(ok){
+    if (!ok) return setStatus('error', 'Google sign-in could not load. Check your internet connection and reload.');
+    runSync();
+  });
+}
+function pollSync(){
+  if (!isConnected() || sync.running || document.visibilityState !== 'visible') return;
+  if (sync.status === 'needlogin' || sync.status === 'noclient' || sync.status === 'connecting') return;
+  runSync();
+}
+
+/* ---------- Tabs ---------- */
+function switchTab(name){
+  state.tab = name;
+  ['add','bank','pdf','drive'].forEach(function(t){
+    $('#tab-'+t).hidden = t!==name;
+    $('#tab-btn-'+t).setAttribute('aria-selected', String(t===name));
+  });
+  renderAll();
+}
+
+/* ---------- Form ---------- */
+function setCorrect(i){
+  state.correct = i;
+  document.querySelectorAll('.letter').forEach(function(b){
+    b.setAttribute('aria-pressed', String(Number(b.dataset.i)===i));
+  });
+}
+function formMsg(text, kind, withForce){
+  var m = $('#form-msg');
+  if (!text){ m.hidden = true; m.textContent = ''; return; }
+  m.hidden = false;
+  m.className = 'msg' + (kind==='warn' ? ' warn' : '');
+  m.textContent = text;
+  if (withForce){
+    m.append(el('button', {type:'button', class:'btn small', text:'Save anyway', onclick:function(){ state.dupOk = true; submitForm(); }}));
+  }
+}
+function formError(text, focusSel){
+  formMsg(text, 'error');
+  if (focusSel) $(focusSel).focus();
+  return false;
+}
+function clearQuestionFields(){
+  $('#f-q').value = '';
+  for (var i=0;i<4;i++) $('#f-o'+i).value = '';
+  setCorrect(-1);
+  state.dupOk = false;
+  formMsg('');
+}
+function updateCatHint(){
+  var v = tidy($('#f-cat').value), h = $('#cat-hint');
+  if (!v){ h.textContent = ''; return; }
+  var c = findCat(v);
+  h.textContent = c ? plural(c.questions.length, 'question') + ' in this category' : 'New category. It is created when you save.';
+}
+function findDuplicate(text, ignoreId){
+  var k = norm(text);
+  for (var i=0;i<state.cats.length;i++){
+    var c = state.cats[i];
+    for (var j=0;j<c.questions.length;j++){
+      var q = c.questions[j];
+      if (q.id!==ignoreId && norm(q.q)===k) return c;
+    }
+  }
+  return null;
+}
+function submitForm(){
+  if ($('#btn-save').disabled) return;
+  var catName = tidy($('#f-cat').value), ref = tidy($('#f-ref').value), qText = $('#f-q').value.trim();
+  var opts = [0,1,2,3].map(function(i){ return $('#f-o'+i).value.trim(); });
+  if (!catName) return formError('Enter a topic category.', '#f-cat');
+  if (!qText) return formError('Type the question.', '#f-q');
+  for (var i=0;i<4;i++) if (!opts[i]) return formError('Fill in option ' + LET[i] + '.', '#f-o'+i);
+  var seen = {};
+  for (var k=0;k<4;k++){ var nk = norm(opts[k]); if (seen[nk]!==undefined) return formError('Options ' + LET[seen[nk]] + ' and ' + LET[k] + ' are the same.', '#f-o'+k); seen[nk]=k; }
+
+  var editing = state.editing;
+  var dup = findDuplicate(qText, editing && editing.qid);
+  if (dup && !state.dupOk){
+    formMsg('This question is already in \u201C' + dup.name + '\u201D.', 'warn', true);
+    return;
+  }
+  state.dupOk = false;
+
+  var target = findCat(catName), created = false;
+  var oldCat = null, idx = -1;
+  if (editing){
+    oldCat = state.cats.filter(function(c){ return c.id===editing.catId; })[0] || null;
+    idx = oldCat ? oldCat.questions.findIndex(function(x){ return x.id===editing.qid; }) : -1;
+  }
+  var qObj;
+  if (idx>=0){
+    var prev = oldCat.questions[idx];
+    qObj = { id: prev.id, q: qText, o: opts, a: state.correct, ref: ref, t: prev.t, u: Date.now() };
+    if (target && target.id===oldCat.id){
+      oldCat.questions[idx] = qObj;
+      persist(oldCat);
+    } else {
+      if (target && !fitsIn(target, qObj)) return formError('That category is full. Use a new category name such as \u201C' + catName + ' (part 2)\u201D.', '#f-cat');
+      oldCat.questions.splice(idx,1); persist(oldCat);
+      if (!target){ target = newCat(catName); created = true; }
+      target.questions.push(qObj); persist(target);
+    }
+    toast('Question updated.');
+    endEdit(true);
+    renderAll();
+    switchTab('bank');
+    return;
+  }
+  qObj = { id: uid('q'), q: qText, o: opts, a: state.correct, ref: ref, t: Date.now(), u: Date.now() };
+  if (target && !fitsIn(target, qObj)) return formError('That category is full. Use a new category name such as \u201C' + catName + ' (part 2)\u201D.', '#f-cat');
+  if (!target){ target = newCat(catName); created = true; }
+  target.questions.push(qObj);
+  persist(target);
+  state.session.unshift({catId: target.id, qid: qObj.id});
+  state.session = state.session.slice(0,8);
+  toast('Added to ' + target.name + ' (' + plural(target.questions.length, 'question') + ').');
+  clearQuestionFields();
+  renderAll();
+  $('#f-q').focus();
+}
+function startEdit(catId, qid){
+  var cat = state.cats.filter(function(c){ return c.id===catId; })[0];
+  var q = cat && cat.questions.filter(function(x){ return x.id===qid; })[0];
+  if (!q) return;
+  state.editing = {catId: catId, qid: qid};
+  $('#f-cat').value = cat.name; $('#f-ref').value = q.ref; $('#f-q').value = q.q;
+  q.o.forEach(function(t,i){ $('#f-o'+i).value = t; });
+  setCorrect(q.a);
+  $('#btn-save').textContent = 'Update question';
+  $('#btn-cancel-edit').hidden = false;
+  $('#form-title').textContent = 'Edit question';
+  formMsg('');
+  updateCatHint();
+  switchTab('add');
+  window.scrollTo(0,0);
+  $('#f-q').focus();
+}
+function endEdit(keepFields){
+  state.editing = null;
+  $('#btn-save').textContent = 'Add question';
+  $('#btn-cancel-edit').hidden = true;
+  $('#form-title').textContent = 'New question';
+  if (keepFields){ clearQuestionFields(); }
+}
+
+/* ---------- Rendering ---------- */
+function renderAll(){
+  renderStats(); renderDatalists(); renderRecent();
+  if (state.tab==='bank') renderBank();
+  if (state.tab==='pdf') renderPdfTab();
+  renderDrive();
+  updateCatHint();
+}
+function renderStats(){
+  var n = totalQuestions(), m = state.cats.length;
+  $('#stats').replaceChildren(el('b',{text:String(n)}), ' ' + (n===1?'question':'questions') + ' in ', el('b',{text:String(m)}), ' ' + (m===1?'category':'categories'));
+}
+function renderDatalists(){
+  var dc = $('#dl-cats'), dr = $('#dl-refs');
+  dc.replaceChildren.apply(dc, sortedCats().map(function(c){ return el('option',{value:c.name}); }));
+  dr.replaceChildren.apply(dr, allRefs().map(function(r){ return el('option',{value:r}); }));
+}
+function renderRecent(){
+  var box = $('#recent'), list = $('#recent-list');
+  var items = state.session.map(function(s){
+    var c = state.cats.filter(function(x){ return x.id===s.catId; })[0];
+    var q = c && c.questions.filter(function(x){ return x.id===s.qid; })[0];
+    return q ? {c:c, q:q} : null;
+  }).filter(Boolean);
+  box.hidden = items.length===0;
+  list.replaceChildren.apply(list, items.map(function(it){
+    return el('div',{class:'mini'}, el('span',{text:it.q.q.replace(/\s+/g,' ')}), el('span',{class:'chip', text:it.c.name}));
+  }));
+}
+function armButton(label, armedLabel, onConfirm, extra){
+  var b = el('button',{type:'button', class:'btn small danger' + (extra?' '+extra:''), text:label});
+  var t = null;
+  b.addEventListener('click', function(){
+    if (!b.classList.contains('armed')){
+      b.classList.add('armed'); b.textContent = armedLabel;
+      t = setTimeout(function(){ b.classList.remove('armed'); b.textContent = label; }, 3200);
+    } else { clearTimeout(t); onConfirm(); }
+  });
+  return b;
+}
+function matchesSearch(q, s){
+  if (!s) return true;
+  return norm([q.q, q.o.join(' '), q.ref].join(' ')).indexOf(s) >= 0;
+}
+function renderBank(){
+  var sel = $('#b-cat'), keep = sel.value;
+  var cats = sortedCats();
+  sel.replaceChildren.apply(sel, [el('option',{value:'', text:'All categories'})].concat(cats.map(function(c){ return el('option',{value:c.id, text:c.name}); })));
+  sel.value = cats.some(function(c){ return c.id===keep; }) ? keep : '';
+
+  var s = norm($('#b-search').value), only = sel.value;
+  var list = $('#bank-list');
+  if (!cats.length){
+    list.replaceChildren(el('div',{class:'empty'}, el('p',{text:'No questions yet. Add your first one to start the bank.'}),
+      el('button',{type:'button', class:'btn primary', text:'Add a question', onclick:function(){ switchTab('add'); $('#f-cat').focus(); }})));
+    return;
+  }
+  var nodes = [], shown = 0;
+  cats.forEach(function(c){
+    if (only && c.id!==only) return;
+    var qs = c.questions.filter(function(q){ return matchesSearch(q, s); });
+    if (s && !qs.length) return;
+    shown++;
+    var d = el('details',{class:'cat'});
+    if (s || state.open[c.id] || only) d.open = true;
+    d.addEventListener('toggle', function(){ if (!s && !only) state.open[c.id] = d.open; });
+    d.append(el('summary',{}, el('span',{class:'name', text:c.name}), el('span',{class:'count', text: s ? qs.length+' of '+c.questions.length : plural(c.questions.length,'question')})));
+    var body = el('div',{class:'cat-body'});
+    var tools = el('div',{class:'cat-tools'});
+    var renameBox = el('form',{class:'rename', hidden:true});
+    var rin = el('input',{type:'text', value:c.name, maxlength:'80', 'aria-label':'New category name'});
+    renameBox.append(rin, el('button',{type:'submit', class:'btn small primary', text:'Save name'}),
+      el('button',{type:'button', class:'btn small', text:'Cancel', onclick:function(){ renameBox.hidden = true; }}));
+    renameBox.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      var nn = tidy(rin.value);
+      if (!nn){ toast('Category name cannot be empty.', 'error'); return; }
+      var other = findCat(nn);
+      if (other && other.id!==c.id){ toast('A category named \u201C' + other.name + '\u201D already exists.', 'error'); return; }
+      c.name = nn; persist(c); toast('Category renamed.'); renderAll();
+    });
+    tools.append(
+      el('button',{type:'button', class:'btn small', text:'Rename category', onclick:function(){ renameBox.hidden = !renameBox.hidden; if (!renameBox.hidden) rin.focus(); }}),
+      armButton('Delete category', 'Tap again to delete ' + plural(c.questions.length,'question'), function(){
+        state.cats = state.cats.filter(function(x){ return x.id!==c.id; });
+        persistDelete(c.id);
+        if (state.editing && state.editing.catId===c.id) endEdit(true);
+        toast('Category deleted.'); renderAll();
+      })
+    );
+    body.append(tools, renameBox);
+    if (!qs.length) body.append(el('p',{class:'empty', text:'No questions in this category yet.'}));
+    qs.forEach(function(q){
+      var n = c.questions.indexOf(q) + 1;
+      var card = el('article',{class:'qcard'});
+      card.append(el('p',{class:'qtext'}, el('b',{text:'Q'+n}), q.q));
+      q.o.forEach(function(t,i){
+        card.append(el('div',{class:'qopt' + (q.a===i ? ' correct' : '')}, el('span',{class:'bub', text:LET[i]}), el('span',{text:t})));
+      });
+      var meta = el('div',{class:'qmeta'});
+      meta.append(q.ref ? el('span',{class:'chip', text:q.ref}) : el('span',{class:'chip plain', text:'No reference'}),
+        q.a<0 ? el('span',{class:'chip plain', text:'No answer marked'}) : null,
+        el('span',{class:'spacer'}),
+        el('button',{type:'button', class:'btn small', text:'Edit', onclick:function(){ startEdit(c.id, q.id); }}),
+        armButton('Delete', 'Tap again to delete', function(){
+          c.questions = c.questions.filter(function(x){ return x.id!==q.id; });
+          state.tomb.q[q.id] = Date.now();
+          persist(c);
+          if (state.editing && state.editing.qid===q.id) endEdit(true);
+          toast('Question deleted.'); renderAll();
+        }));
+      card.append(meta);
+      body.append(card);
+    });
+    d.append(body);
+    nodes.push(d);
+  });
+  if (!shown) nodes.push(el('p',{class:'empty', text:'Nothing matches your search.'}));
+  list.replaceChildren.apply(list, nodes);
+}
+
+/* ---------- PDF tab ---------- */
+function refFilter(){ var v = $('#p-ref').value; return v; }
+function filterQs(c){
+  var v = refFilter();
+  return c.questions.filter(function(q){ return v==='' || (v==='__none__' ? !q.ref : q.ref===v); });
+}
+function getSections(){
+  return sortedCats().filter(function(c){ return !state.deselected[c.id]; })
+    .map(function(c){ return {name:c.name, questions:filterQs(c)}; })
+    .filter(function(s){ return s.questions.length; });
+}
+function renderPdfTab(){
+  var sel = $('#p-ref'), keep = sel.value, refs = allRefs();
+  var hasNone = state.cats.some(function(c){ return c.questions.some(function(q){ return !q.ref; }); });
+  var opts = [el('option',{value:'', text:'All references'})].concat(refs.map(function(r){ return el('option',{value:r, text:r}); }));
+  if (hasNone && refs.length) opts.push(el('option',{value:'__none__', text:'Questions without a reference'}));
+  sel.replaceChildren.apply(sel, opts);
+  sel.value = opts.some(function(o){ return o.value===keep; }) ? keep : '';
+
+  var box = $('#p-cats');
+  var cats = sortedCats();
+  if (!cats.length){ box.replaceChildren(el('p',{class:'hint', text:'No categories yet. Add questions first.'})); }
+  else box.replaceChildren.apply(box, cats.map(function(c){
+    var cb = el('input',{type:'checkbox'});
+    cb.checked = !state.deselected[c.id];
+    cb.addEventListener('change', function(){ if (cb.checked) delete state.deselected[c.id]; else state.deselected[c.id] = true; updatePdfSummary(); });
+    return el('label',{class:'check'}, cb, el('span',{class:'t', text:c.name}), el('span',{class:'n', text:plural(filterQs(c).length,'question')}));
+  }));
+  updatePdfSummary();
+}
+function updatePdfSummary(){
+  var secs = getSections();
+  var n = secs.reduce(function(s,x){ return s + x.questions.length; }, 0);
+  var p = $('#p-summary');
+  p.replaceChildren(n ? el('span',{}, 'The PDF will have ', el('b',{text:plural(n,'question')}), ' in ', el('b',{text:plural(secs.length,'section')}), '.') : 'Nothing to export yet. Tick a category that has questions.');
+}
+async function makePdf(){
+  if (!window.jspdf || !window.jspdf.jsPDF){ toast('The PDF library did not load. Check your internet connection and reload the page.', 'error'); return; }
+  var secs = getSections();
+  if (!secs.length){ toast('Tick at least one category that has questions.', 'error'); return; }
+  var btn = $('#btn-pdf'); btn.disabled = true; btn.textContent = 'Building PDF\u2026';
+  try {
+    await new Promise(function(r){ setTimeout(r, 30); });
+    var title = tidy($('#p-title').value) || 'Fitter Practice Paper';
+    var res = buildPdf(window.jspdf.jsPDF, secs, {title: title, answerKey: $('#p-key').checked});
+    var buf = res.doc.output('arraybuffer');
+    var ok = await saveFile(slug(title) + '.pdf', buf);
+    if (ok) toast(res.replaced ? 'PDF created. ' + plural(res.replaced,'symbol') + ' could not be printed and show as ?.' : 'PDF created.');
+  } catch(e){
+    toast('Could not build the PDF: ' + (e && e.message || e), 'error');
+  } finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
+}
+
+/* ---------- Backup ---------- */
+async function exportBackup(){
+  if (!totalQuestions()){ toast('There is nothing to back up yet.', 'error'); return; }
+  var ok = await saveFile('fitter-question-bank-backup.json', serialize());
+  if (ok) toast('Backup downloaded.');
+}
+function importBackup(text){
+  var data;
+  try { data = JSON.parse(text); } catch(e){ toast('That file is not a valid backup.', 'error'); return; }
+  if (!data || data.app!=='fitter-question-bank' || !Array.isArray(data.categories)){ toast('That file is not a Fitter Question Bank backup.', 'error'); return; }
+  var added = 0, skipped = 0, touched = {};
+  data.categories.forEach(function(c){
+    var name = tidy(c && c.name);
+    if (!name || !Array.isArray(c.questions)) return;
+    var cat = findCat(name) || newCat(name);
+    c.questions.forEach(function(q){
+      if (!q || typeof q.q!=='string' || !Array.isArray(q.o) || q.o.length!==4 || q.o.some(function(o){ return typeof o!=='string'; }) || !q.q.trim()){ skipped++; return; }
+      if (cat.questions.some(function(x){ return norm(x.q)===norm(q.q); })){ skipped++; return; }
+      var now = Date.now();
+      var qo = { id:uid('q'), q:q.q.trim(), o:q.o.map(function(s){ return s.trim(); }), a:(Number.isInteger(q.a) && q.a>=0 && q.a<4) ? q.a : -1, ref:tidy(q.ref), t:now, u:now };
+      cat.questions.push(qo); added++; touched[cat.id] = cat;
+    });
+  });
+  Object.keys(touched).forEach(function(id){ persist(touched[id]); });
+  renderAll();
+  toast('Restored ' + plural(added,'question') + (skipped ? '. Skipped ' + skipped + ' that were duplicates or invalid.' : '.'));
+}
+
+/* ---------- Drive tab ---------- */
+function fmtWhen(ts){
+  try { return new Date(ts).toLocaleString('en-IN', {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}); }
+  catch(e){ return ''; }
+}
+function renderDrive(){
+  var s = sync.status, chip = $('#drive-chip');
+  var label, kind = 'plain';
+  if (s==='noclient'){ label = 'Drive not set up'; }
+  else if (s==='signedout'){ label = 'Connect Drive'; kind = 'warn'; }
+  else if (s==='connecting' || s==='syncing'){ label = 'Syncing\u2026'; }
+  else if (s==='pending'){ label = 'Saving soon'; kind = 'warn'; }
+  else if (s==='synced'){ label = state.dirty ? 'Saving soon' : 'Saved to Drive'; kind = state.dirty ? 'warn' : 'ok'; }
+  else if (s==='offline'){ label = 'Offline, will retry'; kind = 'warn'; }
+  else if (s==='needlogin'){ label = 'Reconnect Drive'; kind = 'warn'; }
+  else if (s==='error'){ label = 'Drive sync failed'; kind = 'warn'; }
+  else { label = 'Google Drive'; }
+  chip.textContent = label;
+  chip.className = 'chip ' + kind;
+
+  var line = 'Your questions are saved on this device only.';
+  if (s==='noclient') line = 'Google Drive is not set up yet. Your questions are saved on this device only. Add your Google client ID in the setup section below to turn on Drive.';
+  else if (s==='signedout') line = 'Not connected. Your questions are saved on this device only.';
+  else if (s==='connecting') line = 'Connecting to Google Drive\u2026';
+  else if (s==='syncing') line = 'Syncing with Google Drive\u2026';
+  else if (s==='pending') line = 'Changes are waiting to be saved to Google Drive.';
+  else if (s==='synced') line = (state.dirty ? 'Changes are waiting to be saved to Google Drive.' : 'Up to date with Google Drive.') + (state.drive.lastSync ? ' Last synced ' + fmtWhen(state.drive.lastSync) + '.' : '');
+  else if (s==='offline' || s==='needlogin' || s==='error') line = sync.msg || 'Google Drive sync stopped.';
+  var foot = $('#storage-status');
+  if (foot) foot.textContent = s==='synced' && !state.dirty ? 'Saved on this device and in Google Drive.' : (isConnected() ? 'Saved on this device. ' + (s==='synced' ? '' : 'Google Drive is catching up.') : 'Saved on this device only. Connect Google Drive on the Google Drive tab to keep a copy there.');
+
+  var st = $('#drive-status');
+  if (st) st.textContent = line;
+  var connected = isConnected();
+  var needConnect = s==='noclient' || s==='signedout' || s==='needlogin' || s==='error' && !connected;
+  var bc = $('#btn-connect');
+  if (bc){
+    bc.hidden = !(s==='noclient' || s==='signedout' || s==='needlogin');
+    bc.textContent = s==='needlogin' ? 'Reconnect Google Drive' : 'Connect Google Drive';
+    $('#btn-sync').hidden = !connected || s==='needlogin';
+    $('#btn-sync').disabled = sync.running;
+    $('#btn-disconnect').hidden = !connected;
+    var fixed = !!GOOGLE_CLIENT_ID;
+    $('#cid-field').hidden = fixed; $('#cid-fixed').hidden = !fixed;
+    $('#origin-hint').textContent = location.origin && location.origin !== 'null' ? location.origin : 'the address of this page';
+    if (s==='noclient' && !sync._opened){ sync._opened = true; $('#setup').open = true; }
+  }
+}
+
+function init(){
+  loadLocal();
+  renderAll();
+  initSync();
+  setInterval(pollSync, 30000);
+  document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') pollSync(); });
+  window.addEventListener('online', function(){ if (sync.status === 'offline') runSync(); });
+}
+/* ---------- Wire up ---------- */
+document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click', function(){ switchTab(b.dataset.tab); }); });
+document.querySelectorAll('.letter').forEach(function(b){
+  b.addEventListener('click', function(){ var i = Number(b.dataset.i); setCorrect(state.correct===i ? -1 : i); });
+});
+$('#qform').addEventListener('submit', function(e){ e.preventDefault(); submitForm(); });
+$('#qform').addEventListener('keydown', function(e){
+  if (e.key==='Enter' && (e.ctrlKey || e.metaKey)){ e.preventDefault(); submitForm(); return; }
+  if (e.key==='Enter' && e.target.tagName==='INPUT'){
+    e.preventDefault();
+    var order = ['f-cat','f-ref','f-q','f-o0','f-o1','f-o2','f-o3'];
+    var i = order.indexOf(e.target.id);
+    if (e.target.id==='f-o3') submitForm();
+    else if (i>=0) $('#'+order[i+1]).focus();
+  }
+});
+['f-q','f-o0','f-o1','f-o2','f-o3'].forEach(function(id){
+  $('#'+id).addEventListener('input', function(){ if (state.dupOk || !$('#form-msg').hidden){ state.dupOk = false; formMsg(''); } });
+});
+$('#f-cat').addEventListener('input', updateCatHint);
+$('#btn-clear').addEventListener('click', function(){ clearQuestionFields(); $('#f-q').focus(); });
+$('#btn-cancel-edit').addEventListener('click', function(){ endEdit(true); switchTab('bank'); });
+$('#b-search').addEventListener('input', renderBank);
+$('#b-cat').addEventListener('change', renderBank);
+$('#p-ref').addEventListener('change', function(){ renderPdfTab(); });
+$('#p-all').addEventListener('click', function(){ state.deselected = {}; renderPdfTab(); });
+$('#p-none').addEventListener('click', function(){ state.cats.forEach(function(c){ state.deselected[c.id] = true; }); renderPdfTab(); });
+$('#btn-pdf').addEventListener('click', makePdf);
+$('#btn-export').addEventListener('click', exportBackup);
+$('#drive-chip').addEventListener('click', function(){ switchTab('drive'); });
+$('#btn-connect').addEventListener('click', connectClick);
+$('#btn-sync').addEventListener('click', function(){ runSync(); });
+$('#btn-disconnect').addEventListener('click', disconnect);
+$('#btn-cid-save').addEventListener('click', function(){
+  var v = tidy($('#cid-input').value);
+  if (!/^[0-9]+-[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(v)){ toast('That does not look like a Google client ID. It ends with .apps.googleusercontent.com', 'error'); return; }
+  lsSet(LS_CID, v); tokenClient = null;
+  toast('Client ID saved.');
+  setStatus(lsGet(LS_FLAG) ? 'needlogin' : 'signedout', 'Tap Reconnect to sign in.');
+});
+$('#btn-import').addEventListener('click', function(){ $('#file-import').click(); });
+$('#file-import').addEventListener('change', function(e){
+  var f = e.target.files && e.target.files[0];
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function(){ importBackup(String(r.result||'')); e.target.value = ''; };
+  r.onerror = function(){ toast('Could not read that file.', 'error'); };
+  r.readAsText(f);
+});
+
+init();
+})();
+</script>
+</body>
+</html>
