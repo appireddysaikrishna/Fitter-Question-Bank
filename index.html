@@ -299,8 +299,8 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
             <p class="note" style="margin-top:0">Send this link to anyone. It opens the exam with the questions, time and marking you chose above. They do not need to sign in, and they cannot see your bank.</p>
             <label class="field"><span>Exam link</span><input type="text" id="sh-link" readonly></label>
             <p class="hint" id="sh-size"></p>
-            <div class="row"><button type="button" class="btn primary" id="sh-share">Share link</button><button type="button" class="btn" id="sh-copy">Copy link</button></div>
-            <p class="note">The link contains the questions and their answers, so anyone who opens it can find the answers. Use it for practice, not for a test that has to be secure.</p>
+            <div class="row"><button type="button" class="btn" id="sh-make" hidden>Make short link</button><button type="button" class="btn primary" id="sh-share">Share link</button><button type="button" class="btn" id="sh-copy">Copy link</button></div>
+            <p class="note">The link gives access to the questions and their answers, so anyone who opens it can find the answers. Use it for practice, not for a test that has to be secure.</p>
           </div>
         </div>
         <div id="ex-history" hidden></div>
@@ -627,6 +627,8 @@ function buildPdf(JsPDF, sections, opts){
 var LET = ['A','B','C','D'];
 /* Paste your Google OAuth client ID between the quotes to use it on every device. */
 var GOOGLE_CLIENT_ID = '';
+/* Optional. A Google API key lets exam links be short. See the README. */
+var GOOGLE_API_KEY = '';
 
 var state = {
   cats: [], tomb: {c:{}, q:{}}, tab: 'add',
@@ -890,10 +892,10 @@ async function downloadFile(id){
   var r = await gfetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '?alt=media');
   return r.text();
 }
-async function createFile(text){
+async function createFile(text, name){
   var b = 'fqb' + Math.random().toString(36).slice(2);
   var body = '--' + b + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
-    JSON.stringify({ name: FILE_NAME, mimeType: 'application/json' }) +
+    JSON.stringify({ name: name || FILE_NAME, mimeType: 'application/json' }) +
     '\r\n--' + b + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + text + '\r\n--' + b + '--';
   var r = await gfetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=' + encodeURIComponent('id,version,modifiedTime'),
     { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: body });
@@ -2101,13 +2103,13 @@ function unpackExam(str){
 
 /* ----- opening a shared link ----- */
 function enterSharedMode(){
-  var hashM = /^#x=([A-Za-z0-9._-]+)$/.exec(location.hash || ''), p = null;
-  try { p = new URLSearchParams(location.search).get('exam'); } catch(e){}
-  if (!hashM && p === null) return false;
+  var hashM = /^#x=([A-Za-z0-9._-]+)$/.exec(location.hash || ''), p = null, dId = null;
+  try { var sp = new URLSearchParams(location.search); p = sp.get('exam'); dId = sp.get('d'); } catch(e){}
+  if (!hashM && p === null && dId === null) return false;
   sharedMode = true;
   document.body.classList.add('shared');
   var sub = $('.sub'); if (sub) sub.textContent = 'Practice exam. Your answers stay on this device.';
-  shared = { data:null, error:'', loading:false, url: location.origin + location.pathname + (hashM ? location.hash : '?exam=' + encodeURIComponent(p)) };
+  shared = { data:null, error:'', loading:false, url: location.href };
   EX_HIST = 'fqb-exam-history-shared';
   if (hashM){
     EX_KEY = 'fqb-exam-shared-' + hashStr(hashM[1]).slice(0, 12);
@@ -2118,6 +2120,21 @@ function enterSharedMode(){
         : 'This exam link looks incomplete. Ask for the link again and open the whole link.';
     }
     switchTab('exam');
+    return true;
+  }
+  /* short link: the exam is a shared file in the owner's Google Drive */
+  if (dId !== null){
+    EX_KEY = 'fqb-exam-shared-d-' + String(dId).slice(0, 24);
+    shared.loading = true;
+    switchTab('exam');
+    var key = apiKey();
+    if (!/^[A-Za-z0-9_-]{15,100}$/.test(dId)){ shared.loading = false; shared.error = 'This exam link is not valid.'; renderExam(); return true; }
+    if (!key){ shared.loading = false; shared.error = 'This page is not set up to open short exam links. Ask the person who sent it.'; renderExam(); return true; }
+    fetch('https://www.googleapis.com/drive/v3/files/' + dId + '?alt=media&key=' + encodeURIComponent(key))
+      .then(function(r){ if (!r.ok) throw new Error(r.status === 404 || r.status === 403 ? 'missing' : 'bad'); return r.json(); })
+      .then(function(d){ var v = validExam(d); if (!v) throw new Error('bad'); shared.data = v; })
+      .catch(function(e){ shared.error = e && e.message === 'missing' ? 'This exam was not found, or it is not shared. Ask the person who sent it.' : 'This exam could not be opened. Check your connection and try again.'; })
+      .then(function(){ shared.loading = false; renderExam(); });
     return true;
   }
   /* older style: an exam file next to index.html */
@@ -2184,21 +2201,72 @@ function buildShare(){
   var pool = s.pool;
   if (s.n < pool.length) pool = seededSample(pool, s.n, parseInt(hashStr(s.paper + '|' + s.cat + '|' + s.n).slice(0, 8), 16));
   var title = examTitle(s);
-  var code = packExam({ title:title, minutes:s.minutes, pos:s.pos, neg:s.neg, shuffle:s.shuffle, count:pool.length,
-    items:pool.map(function(it){ return { cat:it.cat, ref:it.ref, q:it.q, o:it.o, a:it.a }; }) });
-  return { link: location.origin + location.pathname + '#x=' + code, n:pool.length, title:title };
+  var data = { app:'fitter-exam', version:1, title:title, minutes:s.minutes, pos:s.pos, neg:s.neg, shuffle:s.shuffle, count:pool.length,
+    items:pool.map(function(it){ return { cat:it.cat, ref:it.ref, q:it.q, o:it.o, a:it.a }; }) };
+  var code = packExam(data);
+  return { link: location.origin + location.pathname + '#x=' + code, n:pool.length, title:title, data:data, hash:hashStr(JSON.stringify(data)) };
+}
+function apiKey(){ return (typeof GOOGLE_API_KEY !== 'undefined' && GOOGLE_API_KEY) ? String(GOOGLE_API_KEY).trim() : ''; }
+function canShort(){ return !!apiKey() && typeof isConnected === 'function' && isConnected(); }
+function shortUrl(id){ return location.origin + location.pathname + '?d=' + id; }
+function shortLinkFor(hash){ try { var m = JSON.parse(exGet('fqb-short-links') || '{}'); return m[hash] || null; } catch(e){ return null; } }
+function saveShort(hash, id){
+  try {
+    var m = JSON.parse(exGet('fqb-short-links') || '{}'); m[hash] = id;
+    var keys = Object.keys(m); if (keys.length > 40) delete m[keys[0]];
+    exSet('fqb-short-links', JSON.stringify(m));
+  } catch(e){}
 }
 function updateShareBox(){
-  var b = buildShare(), inp = $('#sh-link'), hint = $('#sh-size');
-  $('#sh-share').disabled = !b; $('#sh-copy').disabled = !b;
+  var b = buildShare(), inp = $('#sh-link'), hint = $('#sh-size'), make = $('#sh-make');
+  $('#sh-share').disabled = !b; $('#sh-copy').disabled = !b; make.hidden = true;
   if (!b){ inp.value = ''; hint.textContent = 'Choose questions that have a correct answer marked.'; return; }
+  var sid = apiKey() ? shortLinkFor(b.hash) : null;
+  if (sid){
+    inp.value = shortUrl(sid);
+    hint.textContent = 'Short link ready (' + inp.value.length + ' characters). It works in any app.';
+    return;
+  }
   inp.value = b.link;
   var len = b.link.length, per = len / b.n, fit = Math.max(1, Math.floor(3800 / per));
-  hint.textContent = len <= 4000
-    ? 'Link length: ' + len.toLocaleString('en-IN') + ' characters. It works in WhatsApp, Telegram and most other apps.'
+  var msg = len <= 4000
+    ? 'Long link: ' + len.toLocaleString('en-IN') + ' characters. It works in WhatsApp, Telegram and most other apps.'
     : len <= 12000
-      ? 'Link length: ' + len.toLocaleString('en-IN') + ' characters. It works in WhatsApp. Telegram and some other apps may cut it, so use about ' + fit + ' questions or fewer for those.'
-      : 'Link length: ' + len.toLocaleString('en-IN') + ' characters. This is too long for most apps. Lower the number of questions to about ' + fit + '.';
+      ? 'Long link: ' + len.toLocaleString('en-IN') + ' characters. It works in WhatsApp. Telegram and some other apps may cut it, so use about ' + fit + ' questions or fewer for those.'
+      : 'Long link: ' + len.toLocaleString('en-IN') + ' characters. This is too long for most apps. Lower the number of questions to about ' + fit + '.';
+  if (canShort()){ make.hidden = false; msg += ' Tap Make short link for a much shorter one.'; }
+  else if (!apiKey()) msg += ' For a short link, add a Google API key to the page (see the README).';
+  else msg += ' Connect Google Drive on the Google Drive tab to make a short link.';
+  hint.textContent = msg;
+}
+async function makePublic(id){
+  await gfetch('https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(id) + '/permissions',
+    { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ role:'reader', type:'anyone' }) });
+}
+function shortErr(e){
+  var c = e && e.code;
+  if (c === 'network') return 'No connection to Google. Try again.';
+  if (c === 'popup_closed' || c === 'popup_failed_to_open' || c === 'access_denied' || c === 'auth' || c === 'interaction_required' || c === 'timeout') return 'Sign in to Google Drive again, then tap Make short link.';
+  if (c === 'http_403') return 'Google refused: ' + ((e && e.message) || 'sharing is not allowed for this account.');
+  return 'Could not make the short link: ' + ((e && e.message) || c || 'unknown error');
+}
+async function makeShortLink(){
+  var b = buildShare(); if (!b) return;
+  var btn = $('#sh-make'); btn.disabled = true; btn.textContent = 'Making the link\u2026';
+  try {
+    if (!haveToken()) await requestToken('');
+    var name = 'exam-' + (makeSlug(b.title) || 'practice') + '-' + xlDate() + '.json';
+    var file = await createFile(JSON.stringify(b.data), name);
+    if (!file || !file.id) throw { code:'upstream', message:'Google Drive did not return a file.' };
+    await makePublic(file.id);
+    saveShort(b.hash, String(file.id));
+    updateShareBox();
+    toast('Short link ready.');
+  } catch(e){
+    toast(shortErr(e), 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Make short link';
+  }
 }
 function copyShareLink(){
   var v = $('#sh-link').value;
@@ -2550,6 +2618,7 @@ $('#ex-sharebtn').addEventListener('click', function(){
   var box = $('#ex-sharebox'); box.hidden = false; updateShareBox();
   if (box.scrollIntoView) box.scrollIntoView({ block:'nearest' });
 });
+$('#sh-make').addEventListener('click', makeShortLink);
 $('#sh-share').addEventListener('click', shareExamLink);
 $('#sh-copy').addEventListener('click', copyShareLink);
 document.addEventListener('keydown', function(ev){
