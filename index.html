@@ -73,6 +73,9 @@ table.matrix thead th:first-child{background:var(--field)}
 .check-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.92rem}
 .btn.danger.plain{color:var(--ink);border-color:var(--line)}
 .in-exam .tabs{display:none}
+.shared .tabs,.shared .statsbox,.shared #storage-status{display:none}
+.shared .top{padding-bottom:8px}
+.sharebox{margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
 .ex-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:16px;position:sticky;top:0;z-index:4}
 .ex-prog b{display:block}
 .ex-prog span{color:var(--muted);font-size:.85rem}
@@ -289,16 +292,33 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
           <div class="actions" style="margin-top:12px">
             <button type="button" class="btn primary" id="ex-start">Start exam</button>
             <button type="button" class="btn" id="ex-linkbtn">Get exam link</button>
+            <button type="button" class="btn" id="ex-sharebtn">Share with others</button>
           </div>
           <div id="ex-linkbox" hidden style="margin-top:16px">
             <label class="field"><span>Exam link</span><input type="text" id="ex-link" readonly></label>
             <label class="check"><input type="checkbox" id="ex-autostart"><span class="t">Start the exam as soon as the link opens</span></label>
             <div class="row"><button type="button" class="btn small" id="ex-copy">Copy link</button></div>
-            <p class="note">The link opens this page with your choices filled in. The questions load from this device or from your Google Drive, so it works where you have used this page.</p>
+            <p class="note">The link opens this page with your choices filled in. The questions load from this device or from your Google Drive, so it works where you have used this page. To let other people write the exam, use Share with others.</p>
+          </div>
+          <div id="ex-sharebox" class="sharebox" hidden>
+            <h2>Share this exam with others</h2>
+            <p class="note" style="margin-top:0">This makes an exam file with the questions you chose above, using the time and marking above. Anyone with the link can write it without signing in.</p>
+            <ol class="steps">
+              <li>Choose a name for the link, then tap <b>Download exam file</b>.</li>
+              <li>In your GitHub repository choose <b>Add file</b>, then <b>Upload files</b>. Drop in the downloaded file (keep its name) and choose <b>Commit changes</b>.</li>
+              <li>After about a minute, send the link below to anyone.</li>
+            </ol>
+            <label class="field"><span>Name for the link</span><input type="text" id="sh-slug" maxlength="60" autocomplete="off"></label>
+            <p class="hint" style="margin:-8px 0 12px">File name: <code id="sh-file"></code></p>
+            <div class="row"><button type="button" class="btn primary" id="sh-download">Download exam file</button></div>
+            <label class="field" style="margin-top:16px"><span>Link to share</span><input type="text" id="sh-link" readonly></label>
+            <div class="row"><button type="button" class="btn small" id="sh-copy">Copy link</button></div>
+            <p class="note">The exam file contains the correct answers, so anyone who opens it can find them. Use it for practice, not for a test that has to be secure. To update an exam, upload a new file with the same name.</p>
           </div>
         </div>
         <div id="ex-history" hidden></div>
       </div>
+      <div id="ex-shared" hidden></div>
       <div id="ex-run" hidden></div>
       <div id="ex-result" hidden></div>
     </section>
@@ -1766,8 +1786,8 @@ function refreshExamSetup(){
     ? 'Up to ' + pool.length + (totalQs > pool.length ? ' (' + (totalQs - pool.length) + ' without a correct answer are left out)' : '')
     : (totalQs ? 'These questions have no correct answer marked yet, so they cannot be scored.' : 'No questions match.');
   $('#ex-start').disabled = !pool.length;
-  $('#ex-linkbtn').hidden = !!window.claude;
-  if (window.claude) $('#ex-linkbox').hidden = true;
+  $('#ex-linkbtn').hidden = !!window.claude; $('#ex-sharebtn').hidden = !!window.claude;
+  if (window.claude){ $('#ex-linkbox').hidden = true; $('#ex-sharebox').hidden = true; }
 
   /* resume banner */
   var rb = $('#ex-resume');
@@ -1809,8 +1829,7 @@ function startExamFromSetup(){
   if (!s.pool.length){ toast('There are no scorable questions for this choice.', 'error'); return; }
   var items = s.shuffle ? shuffled(s.pool) : s.pool.slice();
   items = items.slice(0, s.n);
-  var title = s.paper ? (examPapers().papers[s.paper] ? examPapers().papers[s.paper].label : 'Paper') : 'All papers';
-  if (s.cat) title += ', ' + s.cat;
+  var title = examTitle(s);
   startExam(items, { title:title, minutes:s.minutes, pos:s.pos, neg:s.neg });
 }
 function startExam(items, o){
@@ -1940,7 +1959,7 @@ function renderResult(){
     el('p', { class:'sub', text: r.pct.toFixed(1) + '%  in ' + exClock(r.secs * 1000) + '. ' + e.title }),
     el('div', { class:'stats-grid', style:'margin-top:14px' },
       el('div', { class:'stat' }, el('b', { text:String(r.correct) }), el('span', { text:'Correct' })),
-      el('div', { class:'stat' }, el('b', { text:String(r.wrong) }), el('span', { text:'Wrong' + (e.neg ? ' (' + round2(r.wrong * e.pos * e.neg) + ' marks lost)' : '') })),
+      el('div', { class:'stat' }, el('b', { text:String(r.wrong) }), el('span', { text:'Wrong' + (e.neg ? ' (' + round2(r.wrong * e.pos * e.neg) + (round2(r.wrong * e.pos * e.neg) === 1 ? ' mark' : ' marks') + ' lost)' : '') })),
       el('div', { class:'stat' }, el('b', { text:String(r.skipped) }), el('span', { text:'Not answered' })),
       el('div', { class:'stat' }, el('b', { text: attempted ? pct1(r.correct, attempted) : '0.0%' }), el('span', { text:'Accuracy on attempted' })))));
 
@@ -1958,7 +1977,8 @@ function renderResult(){
   var weak = r.wrong + r.skipped;
   parts.push(el('div', { class:'row', style:'margin-top:16px' },
     weak ? el('button', { type:'button', class:'btn primary', text:'Retake ' + plural(weak, 'wrong or skipped question'), onclick:retakeFromResult }) : null,
-    el('button', { type:'button', class:'btn', text:'New exam', onclick:function(){ exam = null; exSave(); exFilter = 'all'; renderExam(); } })));
+    sharedMode ? el('button', { type:'button', class:'btn', text:'Share my result', onclick:shareResult }) : null,
+    el('button', { type:'button', class:'btn', text: sharedMode ? 'Take it again' : 'New exam', onclick:function(){ exam = null; exSave(); exFilter = 'all'; renderExam(); } })));
 
   parts.push(el('h2', { class:'a-h', text:'Review your answers' }));
   var chips = el('div', { class:'row' });
@@ -2001,6 +2021,13 @@ function updateExamChrome(){
 function renderExam(){
   exEnsure();
   var view = !exam ? 'setup' : (exam.finished ? 'result' : 'run');
+  if (sharedMode){
+    $('#ex-setup').hidden = true; $('#ex-shared').hidden = view !== 'setup';
+    $('#ex-run').hidden = view !== 'run'; $('#ex-result').hidden = view !== 'result';
+    if (view === 'setup') renderSharedStart(); else if (view === 'run') renderRun(); else renderResult();
+    updateExamChrome();
+    return;
+  }
   $('#ex-setup').hidden = view !== 'setup'; $('#ex-run').hidden = view !== 'run'; $('#ex-result').hidden = view !== 'result';
   if (view === 'setup') refreshExamSetup();
   else if (view === 'run') renderRun();
@@ -2038,6 +2065,112 @@ function parseExamLink(){
     state.link = { paper:p.get('paper') || '', cat:p.get('cat') || '', n:p.get('n'), min:p.get('min'), neg:p.get('neg'), pos:p.get('pos'), shuffle:p.get('shuffle'), start:p.get('start') === '1' };
     switchTab('exam');
   } catch(e){}
+}
+
+/* ---------- Shared exam links ---------- */
+var sharedMode = false, shared = null;
+function examDir(){ return location.origin + location.pathname.replace(/[^\/]*$/, ''); }
+function makeSlug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60).replace(/-+$/, ''); }
+function sharedLink(slug){ return examDir() + '?exam=' + slug; }
+function negText(neg, pos){
+  if (!neg) return 'no marks are lost for a wrong answer';
+  var f = Math.abs(neg - 0.25) < 0.001 ? 'one quarter of a mark' : Math.abs(neg - 1/3) < 0.001 ? 'one third of a mark' : Math.abs(neg - 0.5) < 0.001 ? 'half a mark' : round2(neg * pos) + ' marks';
+  return 'each wrong answer loses ' + f;
+}
+function validExam(d){
+  if (!d || d.app !== 'fitter-exam' || !Array.isArray(d.items)) return null;
+  var items = d.items.filter(function(it){
+    return it && typeof it.q === 'string' && it.q.trim() && Array.isArray(it.o) && it.o.length === 4 &&
+      it.o.every(function(t){ return typeof t === 'string'; }) && Number.isInteger(it.a) && it.a >= 0 && it.a < 4;
+  }).map(function(it, i){ return { id:String(it.id || ('s' + i)), cat:String(it.cat || 'General'), ref:String(it.ref || ''), q:it.q, o:it.o.slice(), a:it.a }; });
+  if (!items.length) return null;
+  var pos = Number(d.pos) > 0 ? Number(d.pos) : 1, neg = Number(d.neg) >= 0 ? Number(d.neg) : 0;
+  return { title:String(d.title || 'Practice exam').slice(0, 120), minutes:Math.max(0, parseInt(d.minutes, 10) || 0), pos:pos, neg:neg,
+    shuffle:d.shuffle !== false, count:Math.min(items.length, Math.max(1, parseInt(d.count, 10) || items.length)), items:items };
+}
+function enterSharedMode(){
+  var p;
+  try { p = new URLSearchParams(location.search).get('exam'); } catch(e){ return false; }
+  if (p === null) return false;
+  sharedMode = true;
+  var slug = String(p).toLowerCase();
+  document.body.classList.add('shared');
+  var sub = $('.sub'); if (sub) sub.textContent = 'Practice exam. Your answers stay on this device.';
+  EX_KEY = 'fqb-exam-shared-' + slug; EX_HIST = 'fqb-exam-history-shared';
+  shared = { slug:slug, data:null, error:'', loading:true };
+  switchTab('exam');
+  if (!/^[a-z0-9][a-z0-9-]{0,60}$/.test(slug)){ shared.loading = false; shared.error = 'This exam link is not valid.'; renderExam(); return true; }
+  fetch(examDir() + 'exam-' + slug + '.json', { cache:'no-cache' })
+    .then(function(r){ if (!r.ok) throw new Error('missing'); return r.json(); })
+    .then(function(d){ var v = validExam(d); if (!v) throw new Error('bad'); shared.data = v; })
+    .catch(function(e){ shared.error = e && e.message === 'missing' ? 'This exam was not found. Check that the link is complete, or ask the person who shared it.' : 'This exam file could not be read.'; })
+    .then(function(){ shared.loading = false; renderExam(); });
+  return true;
+}
+function renderSharedStart(){
+  var box = $('#ex-shared');
+  if (shared.loading){ box.replaceChildren(el('div', { class:'card' }, el('p', { text:'Loading the exam\u2026' }))); return; }
+  if (shared.error){ box.replaceChildren(el('div', { class:'msg', text:shared.error })); return; }
+  var d = shared.data;
+  var nameIn = el('input', { type:'text', id:'sh-name', maxlength:'60', placeholder:'Your name (optional)', autocomplete:'name' });
+  nameIn.value = exGet('fqb-shared-name') || '';
+  var meta = d.count + (d.count === 1 ? ' question' : ' questions') + ', ' + (d.minutes ? d.minutes + ' minutes' : 'no time limit') +
+    '. Each correct answer earns ' + round2(d.pos) + (d.pos === 1 ? ' mark' : ' marks') + '; ' + negText(d.neg, d.pos) + '.';
+  var start = el('button', { type:'button', class:'btn primary', text:'Start exam', onclick:function(){
+    var name = tidy(nameIn.value);
+    exSet('fqb-shared-name', name);
+    var items = d.items.map(function(it){ return { id:it.id, cat:it.cat, ref:it.ref, q:it.q, o:it.o.slice(), a:it.a }; });
+    if (d.shuffle) items = shuffled(items);
+    startExam(items.slice(0, d.count), { title:d.title, minutes:d.minutes, pos:d.pos, neg:d.neg });
+    exam.name = name; exSave();
+  } });
+  box.replaceChildren(el('div', { class:'card' },
+    el('h2', { text:d.title }), el('p', { class:'note', style:'margin:6px 0 18px', text:meta }),
+    el('label', { class:'field' }, el('span', { text:'Your name' }), nameIn),
+    el('div', { class:'actions' }, start),
+    el('p', { class:'hint', text:'The timer starts when you tap Start exam. Your answers stay on this device.' })));
+}
+async function shareResult(){
+  var e = exam, r = scoreExam(e);
+  var text = (e.name || 'I') + ' scored ' + round2(r.score) + ' / ' + round2(r.max) + ' (' + r.pct.toFixed(1) + '%) in ' + exClock(r.secs * 1000) + ' on \u201C' + e.title + '\u201D. ' + sharedLink(shared.slug);
+  try {
+    if (navigator.share){ await navigator.share({ text:text }); return; }
+  } catch(err){ if (err && err.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text); toast('Result copied. Paste it into a message.'); }
+  catch(err){ toast('Could not copy. Your result: ' + text, 'error'); }
+}
+
+/* ----- owner side: create a shareable exam file ----- */
+function examTitle(s){
+  var t = s.paper ? (examPapers().papers[s.paper] ? examPapers().papers[s.paper].label : 'Paper') : 'All papers';
+  if (s.cat) t += ', ' + s.cat;
+  return t;
+}
+function suggestSlug(){
+  var s = setupSettings();
+  return makeSlug(examTitle(s)) || 'practice-exam';
+}
+function updateShareLink(){
+  var slug = makeSlug($('#sh-slug').value);
+  $('#sh-link').value = slug ? sharedLink(slug) : '';
+  $('#sh-file').textContent = slug ? 'exam-' + slug + '.json' : '';
+}
+function showShareBox(){
+  var b = $('#ex-sharebox');
+  b.hidden = false;
+  if (!exTouched.slug) $('#sh-slug').value = suggestSlug();
+  updateShareLink();
+}
+async function downloadExamFile(){
+  var s = setupSettings();
+  if (!s.pool.length){ toast('There are no scorable questions for this choice.', 'error'); return; }
+  var slug = makeSlug($('#sh-slug').value);
+  if (!slug){ toast('Enter a name for the link.', 'error'); return; }
+  var data = { app:'fitter-exam', version:1, title:examTitle(s), minutes:s.minutes, pos:s.pos, neg:s.neg, shuffle:s.shuffle, count:s.n,
+    createdAt:new Date().toISOString(),
+    items:s.pool.map(function(it){ return { id:it.id, cat:it.cat, ref:it.ref, q:it.q, o:it.o, a:it.a }; }) };
+  var ok = await saveFile('exam-' + slug + '.json', JSON.stringify(data));
+  if (ok) toast('Exam file downloaded. Upload it to GitHub next.');
 }
 
 /* ---------- Excel backup ---------- */
@@ -2318,6 +2451,7 @@ function renderDrive(){
 }
 
 function init(){
+  if (enterSharedMode()) return;
   loadLocal();
   renderAll();
   initSync();
@@ -2361,7 +2495,10 @@ function syncExamMinutes(){
   var n = Math.max(1, parseInt($('#ex-n').value, 10) || 1);
   $('#ex-min').value = String(Math.max(1, Math.round(n * 1.125)));
 }
-function refreshExamLinkIfShown(){ if (!$('#ex-linkbox').hidden) $('#ex-link').value = buildExamLink(); }
+function refreshExamLinkIfShown(){
+  if (!$('#ex-linkbox').hidden) $('#ex-link').value = buildExamLink();
+  if (!$('#ex-sharebox').hidden){ if (!exTouched.slug) $('#sh-slug').value = suggestSlug(); updateShareLink(); }
+}
 ['#ex-paper', '#ex-cat'].forEach(function(id){
   $(id).addEventListener('change', function(){ exTouched.n = false; refreshExamSetup(); refreshExamLinkIfShown(); });
 });
@@ -2372,6 +2509,15 @@ $('#ex-notimer').addEventListener('change', function(){ $('#ex-min').disabled = 
 $('#ex-start').addEventListener('click', startExamFromSetup);
 $('#ex-linkbtn').addEventListener('click', showExamLink);
 $('#ex-copy').addEventListener('click', copyExamLink);
+$('#ex-sharebtn').addEventListener('click', showShareBox);
+$('#sh-slug').addEventListener('input', function(){ exTouched.slug = true; updateShareLink(); });
+$('#sh-download').addEventListener('click', downloadExamFile);
+$('#sh-copy').addEventListener('click', function(){
+  var v = $('#sh-link').value;
+  if (!v){ toast('Enter a name for the link first.', 'error'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(v).then(function(){ toast('Link copied.'); }, function(){ $('#sh-link').select(); toast('Press and hold the link to copy it.'); });
+  else { $('#sh-link').select(); toast('Press and hold the link to copy it.'); }
+});
 document.addEventListener('keydown', function(ev){
   if (!exRunning() || state.tab !== 'exam' || ev.ctrlKey || ev.metaKey || ev.altKey) return;
   var tag = ev.target && ev.target.tagName;
