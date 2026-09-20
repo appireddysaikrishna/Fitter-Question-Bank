@@ -52,6 +52,28 @@ details.setup>summary{cursor:pointer;font-weight:600;padding:8px 0}
 code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;background:var(--field);border:1px solid var(--line);padding:1px 6px;border-radius:5px;overflow-wrap:anywhere}
 .msg.ok{background:var(--ok-soft);color:var(--ok)}
 .msg div+div{margin-top:3px}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:1.6rem;line-height:1.2;font-weight:700}
+.stat span{color:var(--muted);font-size:.88rem}
+.a-h{margin:30px 0 10px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table.data{width:100%;border-collapse:collapse;font-size:.92rem}
+table.data th,table.data td{padding:9px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.data thead th{font-weight:600;background:var(--field);white-space:nowrap}
+table.data tbody tr:last-child td{border-bottom:0}
+table.data .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.data .zero{color:var(--muted)}
+table.data .barcol{width:32%;min-width:90px}
+.bar{height:9px;background:var(--blue);border-radius:5px;min-width:2px}
+table.matrix th:first-child,table.matrix td:first-child{position:sticky;left:0;background:var(--surface);min-width:150px}
+table.matrix thead th:first-child{background:var(--field)}
+.checks-list{display:grid;gap:8px}
+.check-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.92rem}
+.btn.danger.plain{color:var(--ink);border-color:var(--line)}
+.btn.danger.plain.armed{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
+.msg div+div{margin-top:3px}
 .picker{display:grid;gap:10px;margin-top:12px}
 @media (max-width:560px){.statsbox{align-items:flex-start}}
 .tabs{position:sticky;top:0;z-index:5;display:flex;gap:2px;background:var(--bg);border-bottom:1px solid var(--line);margin:0 -16px 20px;padding:0 12px;overflow-x:auto}
@@ -138,6 +160,7 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -155,6 +178,7 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" id="tab-btn-add" aria-controls="tab-add" aria-selected="true" data-tab="add">Add question</button>
     <button class="tab" role="tab" id="tab-btn-bank" aria-controls="tab-bank" aria-selected="false" data-tab="bank">Question bank</button>
+    <button class="tab" role="tab" id="tab-btn-analysis" aria-controls="tab-analysis" aria-selected="false" data-tab="analysis">Analysis</button>
     <button class="tab" role="tab" id="tab-btn-pdf" aria-controls="tab-pdf" aria-selected="false" data-tab="pdf">Make PDF</button>
     <button class="tab" role="tab" id="tab-btn-drive" aria-controls="tab-drive" aria-selected="false" data-tab="drive">Google Drive</button>
   </nav>
@@ -213,6 +237,15 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
         <select id="b-cat" aria-label="Filter by category"></select>
       </div>
       <div id="bank-list"></div>
+    </section>
+
+    <!-- ANALYSIS -->
+    <section id="tab-analysis" role="tabpanel" aria-labelledby="tab-btn-analysis" hidden>
+      <div class="toolbar">
+        <select id="a-ref" aria-label="Paper or reference to analyse"></select>
+        <button type="button" class="btn" id="a-export">Download analysis (Excel)</button>
+      </div>
+      <div id="a-body"></div>
     </section>
 
     <!-- PDF -->
@@ -926,7 +959,7 @@ function pollSync(){
 /* ---------- Tabs ---------- */
 function switchTab(name){
   state.tab = name;
-  ['add','bank','pdf','drive'].forEach(function(t){
+  ['add','bank','analysis','pdf','drive'].forEach(function(t){
     $('#tab-'+t).hidden = t!==name;
     $('#tab-btn-'+t).setAttribute('aria-selected', String(t===name));
   });
@@ -1063,6 +1096,7 @@ function endEdit(keepFields){
 function renderAll(){
   renderStats(); renderDatalists(); renderRecent();
   if (state.tab==='bank') renderBank();
+  if (state.tab==='analysis') renderAnalysis();
   if (state.tab==='pdf') renderPdfTab();
   renderDrive();
   updateCatHint();
@@ -1231,6 +1265,329 @@ async function makePdf(){
   } catch(e){
     toast('Could not build the PDF: ' + (e && e.message || e), 'error');
   } finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
+}
+
+/* ---------- Analysis ---------- */
+var MIN_PAPER = 10;
+function refClean(r){ return String(r||'').replace(/\s+/g,' ').trim().replace(/[\s,;:.]+$/,''); }
+function refKey(r){ return norm(refClean(r)); }
+function pct1(n, d){ return d ? (n / d * 100).toFixed(1) + '%' : '0.0%'; }
+function lev(a, b){
+  var m = a.length, n = b.length, i, j;
+  if (!m) return n; if (!n) return m;
+  var prev = [], cur = [];
+  for (j=0;j<=n;j++) prev[j] = j;
+  for (i=1;i<=m;i++){
+    cur[0] = i;
+    for (j=1;j<=n;j++) cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1] + (a[i-1]===b[j-1] ? 0 : 1));
+    var t = prev; prev = cur; cur = t;
+  }
+  return prev[n];
+}
+function nameTokens(s){ return norm(s).replace(/[^a-z0-9\u0900-\u097F ]+/g,' ').split(' ').filter(Boolean); }
+function similarCats(){
+  var cats = sortedCats(), out = [];
+  for (var i=0;i<cats.length;i++) for (var j=i+1;j<cats.length;j++){
+    var a = cats[i], b = cats[j], ta = nameTokens(a.name), tb = nameTokens(b.name), ka = ta.join(''), kb = tb.join(''), why = '';
+    if (ka===kb) why = 'same name apart from spacing or punctuation';
+    else if (Math.min(ka.length, kb.length) >= 6 && lev(ka, kb) <= 2) why = 'almost the same spelling';
+    else {
+      for (var x=0; x<ta.length && !why; x++) for (var y=0; y<tb.length; y++){
+        if (ta[x]!==tb[y] && ta[x].length>=5 && tb[y].length>=5 && lev(ta[x], tb[y])<=1){ why = '\u201C' + ta[x] + '\u201D and \u201C' + tb[y] + '\u201D look like one word spelled two ways'; break; }
+      }
+    }
+    if (why) out.push({ a:a, b:b, why:why });
+  }
+  return out;
+}
+function numericOpts(q){
+  var n = 0;
+  q.o.forEach(function(t){ if (/^\s*([+\-\u2013\u2212]?\.?\d|[\u00BC\u00BD\u00BE]|rs\.?\s*\d|\u20B9\s*\d)/i.test(t)) n++; });
+  return n >= 3;
+}
+function mentionsFigure(q){ return /\[\s*figure|diagram|\bfigure\b|shown below|see paper/i.test(q.q + ' ' + q.o.join(' ')); }
+function hasHindi(q){ return /[\u0900-\u097F]/.test(q.q + ' ' + q.o.join(' ')); }
+
+function computeAnalysis(sel){
+  var all = [];
+  sortedCats().forEach(function(c){ c.questions.forEach(function(q){ all.push({ cat:c, q:q, rk:refKey(q.ref) }); }); });
+  var items = all.filter(function(it){ return sel==='' || (sel==='__none__' ? !it.rk : it.rk===sel); });
+  var total = items.length, byCat = {};
+  items.forEach(function(it){ byCat[it.cat.id] = byCat[it.cat.id] || { cat:it.cat, n:0 }; byCat[it.cat.id].n++; });
+  var cats = Object.keys(byCat).map(function(k){ return byCat[k]; })
+    .sort(function(a,b){ return (b.n - a.n) || a.cat.name.localeCompare(b.cat.name); });
+  var run = 0;
+  cats.forEach(function(c){ run += c.n; c.pct = total ? c.n/total*100 : 0; c.cum = total ? run/total*100 : 0; });
+
+  var ans = [0,0,0,0], none = 0, num = 0, fig = 0, hin = 0;
+  items.forEach(function(it){
+    if (it.q.a>=0 && it.q.a<4) ans[it.q.a]++; else none++;
+    if (numericOpts(it.q)) num++;
+    if (mentionsFigure(it.q)) fig++;
+    if (hasHindi(it.q)) hin++;
+  });
+
+  /* papers (always across the whole bank) */
+  var labels = {}, papers = {}, order = [];
+  all.forEach(function(it){
+    var k = it.rk || '__none__';
+    if (!papers[k]){ papers[k] = { key:k, n:0, cats:{}, raw:{} }; order.push(k); }
+    papers[k].n++; papers[k].cats[it.cat.id] = (papers[k].cats[it.cat.id]||0) + 1;
+    var r = String(it.q.ref||''); papers[k].raw[r] = (papers[k].raw[r]||0) + 1;
+  });
+  order.forEach(function(k){
+    var p = papers[k];
+    if (k==='__none__'){ p.label = '(no reference)'; return; }
+    var best = null; Object.keys(p.raw).forEach(function(r){ if (!best || p.raw[r] > p.raw[best]) best = r; });
+    p.label = refClean(best);
+  });
+  order.sort(function(a,b){ return papers[a].label.localeCompare(papers[b].label); });
+  var big = order.filter(function(k){ return k!=='__none__' && papers[k].n >= MIN_PAPER; });
+  var matrix = null;
+  if (order.length >= 2){
+    var rows = {};
+    all.forEach(function(it){ rows[it.cat.id] = rows[it.cat.id] || { cat:it.cat, total:0 }; rows[it.cat.id].total++; });
+    matrix = Object.keys(rows).map(function(id){
+      var r = rows[id], inN = 0, share = 0;
+      big.forEach(function(k){ var c = papers[k].cats[id] || 0; if (c) inN++; share += c / papers[k].n; });
+      r.inN = inN; r.avg = big.length ? share / big.length * 100 : null;
+      return r;
+    }).sort(function(a,b){ return (b.total - a.total) || a.cat.name.localeCompare(b.cat.name); });
+  }
+
+  /* data checks */
+  var checks = [];
+  similarCats().forEach(function(p){
+    var from = p.a.questions.length <= p.b.questions.length ? p.a : p.b, to = from===p.a ? p.b : p.a;
+    checks.push({ kind:'cat', text:'\u201C' + p.a.name + '\u201D and \u201C' + p.b.name + '\u201D: ' + p.why + '.', from:from, to:to });
+  });
+  order.forEach(function(k){
+    if (k==='__none__') return;
+    var p = papers[k], raws = Object.keys(p.raw), bad = raws.filter(function(r){ return r !== p.label; });
+    if (bad.length) checks.push({ kind:'ref', text:'Reference written as ' + bad.map(function(r){ return '\u201C' + r + '\u201D'; }).join(', ') + '. Cleaned form: \u201C' + p.label + '\u201D.', raws:bad, to:p.label });
+  });
+  var noAns = all.filter(function(it){ return !(it.q.a>=0 && it.q.a<4); }).length;
+  if (noAns) checks.push({ kind:'info', text: plural(noAns, 'question') + ' in the whole bank ' + (noAns===1 ? 'has' : 'have') + ' no correct answer marked.' });
+  var noRef = all.filter(function(it){ return !it.rk; }).length;
+  if (noRef) checks.push({ kind:'info', text: plural(noRef, 'question') + ' in the whole bank ' + (noRef===1 ? 'has' : 'have') + ' no reference.' });
+  var seen = {}, dups = [];
+  all.forEach(function(it){ var k = norm(it.q.q); (seen[k] = seen[k] || []).push(it); });
+  Object.keys(seen).forEach(function(k){ if (seen[k].length > 1) dups.push(seen[k]); });
+  if (dups.length) checks.push({ kind:'info', text: plural(dups.length, 'question') + ' appear more than once, for example \u201C' + dups[0][0].q.q.slice(0,70).replace(/\s+/g,' ') + '\u201D in ' + dups[0].map(function(d){ return d.cat.name; }).join(' and ') + '.' });
+
+  return { items:items, total:total, cats:cats, ans:ans, none:none, num:num, fig:fig, hin:hin,
+    papers:papers, order:order, big:big, matrix:matrix, checks:checks, allCount:all.length };
+}
+
+function mergeCats(fromId, toId){
+  var a = state.cats.filter(function(c){ return c.id===fromId; })[0], b = state.cats.filter(function(c){ return c.id===toId; })[0];
+  if (!a || !b || a.id===b.id) return;
+  var now = Date.now(), moved = a.questions.length;
+  a.questions.forEach(function(q){ q.u = now; b.questions.push(q); });
+  a.questions = [];
+  if (state.editing && state.editing.catId===a.id) endEdit(true);
+  persist(b);
+  state.cats = state.cats.filter(function(c){ return c.id!==a.id; });
+  persistDelete(a.id);
+  toast('Moved ' + plural(moved, 'question') + ' into \u201C' + b.name + '\u201D.');
+  renderAll();
+}
+function fixRefs(raws, to){
+  var now = Date.now(), n = 0, touched = [];
+  state.cats.forEach(function(c){
+    var hit = false;
+    c.questions.forEach(function(q){ if (raws.indexOf(q.ref) >= 0){ q.ref = to; q.u = now; n++; hit = true; } });
+    if (hit) touched.push(c);
+  });
+  touched.forEach(function(c){ persist(c); });
+  toast('Updated the reference on ' + plural(n, 'question') + '.');
+  renderAll();
+}
+
+function tcell(tag, text, cls, title){
+  var n = el(tag, { class: cls || null, text: text == null ? '' : String(text) });
+  if (title) n.title = title;
+  return n;
+}
+function renderAnalysis(){
+  var box = $('#a-body'), sel = $('#a-ref'), keep = sel.value;
+  var base = computeAnalysis('');
+  var opts = [el('option', { value:'', text:'All papers and references' })];
+  base.order.forEach(function(k){ opts.push(el('option', { value:k, text: base.papers[k].label + ' (' + base.papers[k].n + ')' })); });
+  sel.replaceChildren.apply(sel, opts);
+  sel.value = opts.some(function(o){ return o.value===keep; }) ? keep : '';
+  var a = sel.value==='' ? base : computeAnalysis(sel.value);
+  if (!a.allCount){
+    box.replaceChildren(el('div', { class:'empty' }, el('p', { text:'No questions yet. Add some, or restore your Excel backup, and the analysis appears here.' })));
+    return;
+  }
+  var parts = [];
+  var stats = el('div', { class:'stats-grid' });
+  [['Questions', String(a.total)], ['Categories', String(a.cats.length)],
+   ['Papers', sel.value==='' ? String(base.order.filter(function(k){ return k!=='__none__'; }).length) : '1'],
+   ['With answer key', pct1(a.total - a.none, a.total)]].forEach(function(s){
+    stats.append(el('div', { class:'stat' }, el('b', { text:s[1] }), el('span', { text:s[0] })));
+  });
+  parts.push(stats);
+
+  /* categories */
+  parts.push(el('h2', { class:'a-h', text:'Share of questions by category' }));
+  var maxP = a.cats.length ? a.cats[0].pct : 1;
+  var t1 = el('table', { class:'data' });
+  t1.append(el('thead', {}, el('tr', {}, tcell('th','Category'), tcell('th','Qs','num'), tcell('th','Share','num'), tcell('th','', 'barcol'), tcell('th','Running total','num'))));
+  var tb1 = el('tbody');
+  a.cats.forEach(function(c){
+    var bar = el('div', { class:'bar' }); bar.style.width = (maxP ? c.pct / maxP * 100 : 0) + '%';
+    tb1.append(el('tr', {}, tcell('td', c.cat.name), tcell('td', c.n, 'num'), tcell('td', pct1(c.n, a.total), 'num'), el('td', { class:'barcol' }, bar), tcell('td', c.cum.toFixed(1) + '%', 'num')));
+  });
+  t1.append(tb1);
+  parts.push(el('div', { class:'tbl-wrap' }, t1));
+  if (a.cats.length >= 3){
+    var top3 = a.cats.slice(0,3).reduce(function(s,c){ return s + c.n; }, 0);
+    parts.push(el('p', { class:'note', text:'The top 3 categories make up ' + pct1(top3, a.total) + ' of these questions (' + top3 + ' of ' + a.total + ').' }));
+  }
+
+  /* papers */
+  var realPapers = base.order.filter(function(k){ return k!=='__none__'; });
+  if (realPapers.length >= 1){
+    parts.push(el('h2', { class:'a-h', text:'Questions per paper' }));
+    var t2 = el('table', { class:'data' });
+    t2.append(el('thead', {}, el('tr', {}, tcell('th','Paper or reference'), tcell('th','Qs','num'), tcell('th','Categories','num'))));
+    var tb2 = el('tbody');
+    base.order.forEach(function(k){ var p = base.papers[k]; tb2.append(el('tr', {}, tcell('td', p.label), tcell('td', p.n, 'num'), tcell('td', Object.keys(p.cats).length, 'num'))); });
+    t2.append(tb2);
+    parts.push(el('div', { class:'tbl-wrap' }, t2));
+  }
+
+  /* matrix */
+  if (base.matrix && base.order.length >= 2){
+    parts.push(el('h2', { class:'a-h', text:'Category by paper' }));
+    parts.push(el('p', { class:'note', text: base.big.length
+      ? 'Counts per paper. \u201CTypical share\u201D is the average share of a paper across the ' + plural(base.big.length, 'paper') + ' with ' + MIN_PAPER + ' or more questions; \u201CIn papers\u201D counts how many of those papers include the category.'
+      : 'Counts per paper. Typical share needs at least one paper with ' + MIN_PAPER + ' or more questions.' }));
+    var t3 = el('table', { class:'data matrix' });
+    var hr = el('tr', {}, tcell('th','Category'));
+    base.order.forEach(function(k){ hr.append(tcell('th', base.papers[k].label, 'num', base.papers[k].label)); });
+    hr.append(tcell('th','Total','num'), tcell('th','In papers','num'), tcell('th','Typical share','num'));
+    t3.append(el('thead', {}, hr));
+    var tb3 = el('tbody');
+    base.matrix.forEach(function(r){
+      var tr = el('tr', {}, tcell('td', r.cat.name));
+      base.order.forEach(function(k){
+        var c = base.papers[k].cats[r.cat.id] || 0;
+        tr.append(tcell('td', c ? c : '\u2013', 'num' + (c ? '' : ' zero'), c ? pct1(c, base.papers[k].n) + ' of this paper' : ''));
+      });
+      tr.append(tcell('td', r.total, 'num'), tcell('td', base.big.length ? r.inN + ' of ' + base.big.length : '\u2013', 'num'), tcell('td', r.avg==null ? '\u2013' : r.avg.toFixed(1) + '%', 'num'));
+      tb3.append(tr);
+    });
+    t3.append(tb3);
+    parts.push(el('div', { class:'tbl-wrap' }, t3));
+  }
+
+  /* answers and types */
+  parts.push(el('h2', { class:'a-h', text:'Correct answer spread' }));
+  var t4 = el('table', { class:'data' });
+  t4.append(el('thead', {}, el('tr', {}, tcell('th','Answer'), tcell('th','Qs','num'), tcell('th','Share of answered','num'))));
+  var tb4 = el('tbody'), answered = a.total - a.none;
+  LET.forEach(function(L, i){ tb4.append(el('tr', {}, tcell('td', 'Option ' + L), tcell('td', a.ans[i], 'num'), tcell('td', pct1(a.ans[i], answered), 'num'))); });
+  tb4.append(el('tr', {}, tcell('td','No answer marked'), tcell('td', a.none, 'num'), tcell('td','', 'num')));
+  t4.append(tb4);
+  parts.push(el('div', { class:'tbl-wrap' }, t4));
+
+  parts.push(el('h2', { class:'a-h', text:'Question types (estimated from the text)' }));
+  var t5 = el('table', { class:'data' });
+  t5.append(el('tbody', {},
+    el('tr', {}, tcell('td','Numeric options (at least 3 of 4 options start with a number)'), tcell('td', a.num, 'num'), tcell('td', pct1(a.num, a.total), 'num')),
+    el('tr', {}, tcell('td','Mention a figure or diagram'), tcell('td', a.fig, 'num'), tcell('td', pct1(a.fig, a.total), 'num')),
+    el('tr', {}, tcell('td','Contain Hindi text'), tcell('td', a.hin, 'num'), tcell('td', pct1(a.hin, a.total), 'num'))));
+  parts.push(el('div', { class:'tbl-wrap' }, t5));
+  parts.push(el('p', { class:'note', text:'Numeric options include factual numbers such as sizes and angles, not only calculations.' }));
+
+  /* checks */
+  parts.push(el('h2', { class:'a-h', text:'Data checks' }));
+  if (!base.checks.length) parts.push(el('p', { class:'note', text:'No problems found. Category names and references look consistent.' }));
+  else {
+    var list = el('div', { class:'checks-list' });
+    base.checks.forEach(function(ch){
+      var row = el('div', { class:'check-row' }, el('span', { text: ch.text }));
+      if (ch.kind==='cat') row.append(armButton('Merge \u201C' + ch.from.name + '\u201D into \u201C' + ch.to.name + '\u201D', 'Tap again to merge', function(){ mergeCats(ch.from.id, ch.to.id); }, 'plain'));
+      if (ch.kind==='ref') row.append(armButton('Clean the reference', 'Tap again to apply', function(){ fixRefs(ch.raws, ch.to); }, 'plain'));
+      list.append(row);
+    });
+    parts.push(list);
+  }
+  box.replaceChildren.apply(box, parts);
+}
+
+async function exportAnalysis(){
+  if (!window.ExcelJS){ toast('The Excel library did not load. Check your internet connection and reload the page.', 'error'); return; }
+  var sel = $('#a-ref').value, a = computeAnalysis(sel), base = computeAnalysis('');
+  if (!a.allCount){ toast('There are no questions to analyse yet.', 'error'); return; }
+  try {
+    var wb = new ExcelJS.Workbook(); wb.creator = 'Fitter Question Bank'; wb.created = new Date();
+    var HEAD = { font:{ name:'Arial', size:11, bold:true, color:{ argb:'FFFFFFFF' } }, fill:{ type:'pattern', pattern:'solid', fgColor:{ argb:'FF1F4E8C' } }, alignment:{ vertical:'middle', wrapText:true } };
+    var styleHead = function(ws){ ws.getRow(1).eachCell(function(c){ c.font = HEAD.font; c.fill = HEAD.fill; c.alignment = HEAD.alignment; }); ws.views = [{ state:'frozen', ySplit:1 }]; };
+    var body = function(ws){ ws.eachRow(function(r, i){ if (i>1) r.eachCell({ includeEmpty:true }, function(c){ c.font = { name:'Arial', size:10 }; }); }); };
+
+    var s1 = wb.addWorksheet('Summary');
+    s1.columns = [{ header:'Item', width:36 }, { header:'Value', width:34 }];
+    var papersN = a.order.filter(function(k){ return k!=='__none__'; }).length;
+    [['Scope', sel==='' ? 'All papers and references' : (base.papers[sel] ? base.papers[sel].label : 'Questions without a reference')],
+     ['Questions', a.total], ['Categories', a.cats.length], ['Papers in the bank', base.order.filter(function(k){ return k!=='__none__'; }).length],
+     ['Questions with a correct answer marked', a.total - a.none], ['Numeric-option questions', a.num], ['Mention a figure or diagram', a.fig], ['Contain Hindi text', a.hin],
+     ['Analysis date', new Date().toISOString().slice(0,10)]].forEach(function(r){ s1.addRow(r); });
+    styleHead(s1); body(s1);
+
+    var s2 = wb.addWorksheet('By category');
+    s2.columns = [{ header:'Category', width:32 }, { header:'Questions', width:12 }, { header:'Share', width:10 }, { header:'Running total', width:14 }];
+    var last = a.cats.length + 1, run = 0;
+    a.cats.forEach(function(c, i){
+      run += c.n; var r = i + 2;
+      s2.addRow([c.cat.name, c.n, { formula:'B' + r + '/SUM($B$2:$B$' + last + ')', result: c.n / a.total }, { formula:'SUM($C$2:C' + r + ')', result: run / a.total }]);
+    });
+    s2.addRow(['Total', { formula:'SUM(B2:B' + last + ')', result: a.total }, { formula:'SUM(C2:C' + last + ')', result: 1 }, '']);
+    styleHead(s2); body(s2);
+    s2.eachRow(function(r, i){ if (i>1){ r.getCell(3).numFmt = '0.0%'; r.getCell(4).numFmt = '0.0%'; } });
+    s2.getRow(last + 1).font = { name:'Arial', size:10, bold:true };
+
+    if (base.matrix){
+      var s3 = wb.addWorksheet('Category by paper');
+      var cols = [{ header:'Category', width:32 }];
+      base.order.forEach(function(k){ cols.push({ header: base.papers[k].label, width:16 }); });
+      cols.push({ header:'Total', width:10 }, { header:'In papers', width:12 }, { header:'Typical share', width:14 });
+      s3.columns = cols;
+      var nP = base.order.length, lastCol = String.fromCharCode(65 + nP);
+      base.matrix.forEach(function(r, i){
+        var row = [r.cat.name];
+        base.order.forEach(function(k){ row.push(base.papers[k].cats[r.cat.id] || 0); });
+        row.push(nP <= 24 ? { formula:'SUM(B' + (i+2) + ':' + lastCol + (i+2) + ')', result: r.total } : r.total);
+        row.push(base.big.length ? r.inN + ' of ' + base.big.length : '');
+        row.push(r.avg==null ? '' : r.avg / 100);
+        s3.addRow(row);
+      });
+      styleHead(s3); body(s3);
+      s3.eachRow(function(r, i){ if (i>1) r.getCell(nP + 4).numFmt = '0.0%'; });
+    }
+
+    var s4 = wb.addWorksheet('Answer key spread');
+    s4.columns = [{ header:'Answer', width:20 }, { header:'Questions', width:12 }, { header:'Share of answered', width:18 }];
+    var ansN = a.total - a.none;
+    LET.forEach(function(L, i){ var r = i + 2; s4.addRow(['Option ' + L, a.ans[i], { formula: ansN ? 'B' + r + '/SUM($B$2:$B$5)' : '0', result: ansN ? a.ans[i] / ansN : 0 }]); });
+    s4.addRow(['No answer marked', a.none, '']);
+    styleHead(s4); body(s4);
+    s4.eachRow(function(r, i){ if (i>1 && i<6) r.getCell(3).numFmt = '0.0%'; });
+
+    var s5 = wb.addWorksheet('Data checks');
+    s5.columns = [{ header:'Finding', width:100 }];
+    if (base.checks.length) base.checks.forEach(function(c){ s5.addRow([c.text]); }); else s5.addRow(['No problems found.']);
+    styleHead(s5); body(s5);
+
+    var buf = await wb.xlsx.writeBuffer();
+    var ok = await saveFile('fitter-question-analysis-' + xlDate() + '.xlsx', buf);
+    if (ok) toast('Analysis downloaded.');
+  } catch(e){
+    toast('Could not build the analysis file: ' + (e && e.message || e), 'error');
+  }
 }
 
 /* ---------- Excel backup ---------- */
@@ -1546,6 +1903,9 @@ $('#p-ref').addEventListener('change', function(){ renderPdfTab(); });
 $('#p-all').addEventListener('click', function(){ state.deselected = {}; renderPdfTab(); });
 $('#p-none').addEventListener('click', function(){ state.cats.forEach(function(c){ state.deselected[c.id] = true; }); renderPdfTab(); });
 $('#btn-pdf').addEventListener('click', makePdf);
+$('#a-ref').addEventListener('change', renderAnalysis);
+$('#a-export').addEventListener('click', exportAnalysis);
+$('#btn-export').addEventListener('click', exportExcel);
 $('#btn-export').addEventListener('click', exportExcel);
 $('#file-import').addEventListener('change', function(e){
   var f = e.target.files && e.target.files[0];
