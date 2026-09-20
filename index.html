@@ -72,6 +72,30 @@ table.matrix thead th:first-child{background:var(--field)}
 .checks-list{display:grid;gap:8px}
 .check-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:.92rem}
 .btn.danger.plain{color:var(--ink);border-color:var(--line)}
+.in-exam .tabs{display:none}
+.ex-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:16px;position:sticky;top:0;z-index:4}
+.ex-prog b{display:block}
+.ex-prog span{color:var(--muted);font-size:.85rem}
+.ex-timer{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums}
+.ex-timer.low{color:var(--danger)}
+.ex-q .qtext{font-size:1.15rem;margin-bottom:14px}
+.ex-opts{display:grid;gap:10px;margin-bottom:16px}
+.exopt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-size:1.05rem;line-height:1.45;cursor:pointer}
+.exopt.on{border-color:var(--blue);background:var(--blue-soft)}
+.exopt.on .bub{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
+.exopt .ot{white-space:pre-wrap;overflow-wrap:anywhere}
+.ex-nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.ex-pal{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px}
+.pal{height:44px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-family:inherit;font-size:.95rem;font-weight:600;cursor:pointer;position:relative}
+.pal.answered{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
+.pal.seen{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+.pal.cur{outline:3px solid var(--focus);outline-offset:2px}
+.pal.mk::after{content:"";position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:currentColor}
+.ex-big{font-size:2.4rem;font-weight:700;line-height:1.1;margin:0 0 4px}
+.qopt.wrong .bub{background:var(--danger);border-color:var(--danger);color:#fff}
+.tag{font-style:normal;font-family:"Hanken Grotesk",system-ui,sans-serif;font-size:.8rem;color:var(--muted)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.bad{background:var(--danger-soft);color:var(--danger)}
 .btn.danger.plain.armed{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
 .msg div+div{margin-top:3px}
 .picker{display:grid;gap:10px;margin-top:12px}
@@ -88,7 +112,7 @@ table.matrix thead th:first-child{background:var(--field)}
 .field{display:block;margin-bottom:16px}
 .field>span,fieldset>legend{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px;padding:0}
 fieldset{border:0;padding:0;margin:0 0 16px;min-width:0}
-input[type="text"],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+input[type="text"],input[type="number"],textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 textarea{resize:vertical;min-height:88px}
 textarea.paper{font-family:"Source Serif 4",Georgia,"Times New Roman",serif;font-size:1.06rem;line-height:1.55;border-left:4px solid var(--blue)}
 .hint{display:block;font-size:.82rem;color:var(--muted);margin-top:5px;min-height:1.2em}
@@ -178,6 +202,7 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button class="tab" role="tab" id="tab-btn-add" aria-controls="tab-add" aria-selected="true" data-tab="add">Add question</button>
     <button class="tab" role="tab" id="tab-btn-bank" aria-controls="tab-bank" aria-selected="false" data-tab="bank">Question bank</button>
+    <button class="tab" role="tab" id="tab-btn-exam" aria-controls="tab-exam" aria-selected="false" data-tab="exam">Exam</button>
     <button class="tab" role="tab" id="tab-btn-analysis" aria-controls="tab-analysis" aria-selected="false" data-tab="analysis">Analysis</button>
     <button class="tab" role="tab" id="tab-btn-pdf" aria-controls="tab-pdf" aria-selected="false" data-tab="pdf">Make PDF</button>
     <button class="tab" role="tab" id="tab-btn-drive" aria-controls="tab-drive" aria-selected="false" data-tab="drive">Google Drive</button>
@@ -237,6 +262,45 @@ details.cat>summary .count{color:var(--muted);font-weight:500;font-size:.9rem;wh
         <select id="b-cat" aria-label="Filter by category"></select>
       </div>
       <div id="bank-list"></div>
+    </section>
+
+    <!-- EXAM -->
+    <section id="tab-exam" role="tabpanel" aria-labelledby="tab-btn-exam" hidden>
+      <div id="ex-setup">
+        <div class="card">
+          <h2>Write an exam</h2>
+          <p class="hint" style="margin-bottom:16px">Choose one paper, or use every question in the bank. Only questions with a correct answer marked can be scored.</p>
+          <div id="ex-resume" class="msg warn" hidden style="margin:0 0 16px"></div>
+          <div class="grid2">
+            <label class="field"><span>Paper</span><select id="ex-paper"></select></label>
+            <label class="field"><span>Topic</span><select id="ex-cat"></select></label>
+          </div>
+          <div class="grid2">
+            <label class="field"><span>Number of questions</span><input type="number" id="ex-n" min="1" inputmode="numeric"><small class="hint" id="ex-avail"></small></label>
+            <label class="field"><span>Time limit in minutes</span><input type="number" id="ex-min" min="1" inputmode="numeric">
+              <label class="check" style="padding:6px 0 0"><input type="checkbox" id="ex-notimer"><span class="t">No time limit</span></label></label>
+          </div>
+          <div class="grid2">
+            <label class="field"><span>Marks for each correct answer</span><input type="number" id="ex-pos" value="1" min="0.25" step="0.25" inputmode="decimal"></label>
+            <label class="field"><span>Marks lost for a wrong answer</span>
+              <select id="ex-neg"><option value="0">None</option><option value="0.25">One quarter of a mark</option><option value="0.333333" selected>One third of a mark</option><option value="0.5">Half a mark</option></select></label>
+          </div>
+          <label class="check"><input type="checkbox" id="ex-shuffle" checked><span class="t">Shuffle the order of questions</span></label>
+          <div class="actions" style="margin-top:12px">
+            <button type="button" class="btn primary" id="ex-start">Start exam</button>
+            <button type="button" class="btn" id="ex-linkbtn">Get exam link</button>
+          </div>
+          <div id="ex-linkbox" hidden style="margin-top:16px">
+            <label class="field"><span>Exam link</span><input type="text" id="ex-link" readonly></label>
+            <label class="check"><input type="checkbox" id="ex-autostart"><span class="t">Start the exam as soon as the link opens</span></label>
+            <div class="row"><button type="button" class="btn small" id="ex-copy">Copy link</button></div>
+            <p class="note">The link opens this page with your choices filled in. The questions load from this device or from your Google Drive, so it works where you have used this page.</p>
+          </div>
+        </div>
+        <div id="ex-history" hidden></div>
+      </div>
+      <div id="ex-run" hidden></div>
+      <div id="ex-result" hidden></div>
     </section>
 
     <!-- ANALYSIS -->
@@ -959,7 +1023,7 @@ function pollSync(){
 /* ---------- Tabs ---------- */
 function switchTab(name){
   state.tab = name;
-  ['add','bank','analysis','pdf','drive'].forEach(function(t){
+  ['add','bank','exam','analysis','pdf','drive'].forEach(function(t){
     $('#tab-'+t).hidden = t!==name;
     $('#tab-btn-'+t).setAttribute('aria-selected', String(t===name));
   });
@@ -1096,6 +1160,8 @@ function endEdit(keepFields){
 function renderAll(){
   renderStats(); renderDatalists(); renderRecent();
   if (state.tab==='bank') renderBank();
+  if (state.tab==='exam') renderExam();
+  updateExamChrome();
   if (state.tab==='analysis') renderAnalysis();
   if (state.tab==='pdf') renderPdfTab();
   renderDrive();
@@ -1590,6 +1656,390 @@ async function exportAnalysis(){
   }
 }
 
+/* ---------- Exam ---------- */
+var EX_KEY = 'fqb-exam-v1', EX_HIST = 'fqb-exam-history-v1';
+var exam = null, exLoaded = false, exTimer = null, exFilter = 'all', exTouched = {};
+function exGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function exSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+function exDel(k){ try { localStorage.removeItem(k); } catch(e){} }
+function exSave(){ if (exam) exSet(EX_KEY, JSON.stringify(exam)); else exDel(EX_KEY); }
+function exEnsure(){
+  if (exLoaded) return;
+  exLoaded = true;
+  try { var raw = exGet(EX_KEY); exam = raw ? JSON.parse(raw) : null; } catch(e){ exam = null; }
+  if (exam && !exam.finished){
+    if (exam.deadline && Date.now() >= exam.deadline) finishExam(true); else exStartTimer();
+  }
+}
+function exRunning(){ return !!(exam && !exam.finished); }
+function exClock(ms){
+  var s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = s % 60;
+  var p = function(n){ return String(n).padStart(2, '0'); };
+  return (h ? h + ':' + p(m) : String(m)) + ':' + p(r);
+}
+function round2(n){ return Math.round(n * 100) / 100; }
+function exHistory(){ try { var a = JSON.parse(exGet(EX_HIST) || '[]'); return Array.isArray(a) ? a : []; } catch(e){ return []; } }
+
+/* ----- pool and setup ----- */
+function examMatches(q, paper){
+  if (!(q.a >= 0 && q.a < 4)) return false;
+  var k = refKey(q.ref);
+  return paper === '' || (paper === '__none__' ? !k : k === paper);
+}
+function examPapers(){
+  var papers = {}, order = [];
+  sortedCats().forEach(function(c){ c.questions.forEach(function(q){
+    var k = refKey(q.ref) || '__none__';
+    if (!papers[k]){ papers[k] = { key:k, total:0, usable:0, raw:{} }; order.push(k); }
+    papers[k].total++; if (q.a >= 0 && q.a < 4) papers[k].usable++;
+    var r = String(q.ref || ''); papers[k].raw[r] = (papers[k].raw[r] || 0) + 1;
+  }); });
+  order.forEach(function(k){
+    var p = papers[k], best = null;
+    Object.keys(p.raw).forEach(function(r){ if (best === null || p.raw[r] > p.raw[best]) best = r; });
+    p.label = k === '__none__' ? '(no reference)' : refClean(best);
+  });
+  order.sort(function(a, b){ return papers[a].label.localeCompare(papers[b].label); });
+  return { papers:papers, order:order };
+}
+function examPool(paper, catName){
+  var out = [];
+  sortedCats().forEach(function(c){
+    if (catName && norm(c.name) !== norm(catName)) return;
+    c.questions.forEach(function(q){
+      if (examMatches(q, paper)) out.push({ id:q.id, cat:c.name, ref:q.ref || '', q:q.q, o:q.o.slice(), a:q.a });
+    });
+  });
+  return out;
+}
+function shuffled(arr){
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+function exSetIf(id, v){ var n = $(id); if (n && v != null && v !== '') n.value = v; }
+function refreshExamSetup(){
+  var pSel = $('#ex-paper'), cSel = $('#ex-cat');
+  var info = examPapers(), keepP = pSel.value, keepC = cSel.value;
+  var usableAll = 0; info.order.forEach(function(k){ usableAll += info.papers[k].usable; });
+  var popts = [el('option', { value:'', text:'All papers (' + usableAll + ' questions)' })];
+  info.order.forEach(function(k){ popts.push(el('option', { value:k, text: info.papers[k].label + ' (' + info.papers[k].usable + (info.papers[k].usable !== info.papers[k].total ? ' of ' + info.papers[k].total : '') + ')' })); });
+  pSel.replaceChildren.apply(pSel, popts);
+  pSel.value = popts.some(function(o){ return o.value === keepP; }) ? keepP : '';
+
+  /* deep link values */
+  var L = state.link, pending = false;
+  if (L){
+    var found = L.paper === '' || info.order.indexOf(L.paper) >= 0;
+    var settled = typeof sync === 'undefined' || ['connecting','syncing','pending','idle'].indexOf(sync.status) < 0;
+    if (found){
+      pSel.value = L.paper;
+    } else if (settled){
+      toast('That paper is not in this bank.', 'error'); state.link = null; L = null;
+    } else { pending = true; L = null; }
+  }
+
+  var cats = sortedCats().map(function(c){ return { name:c.name, n: c.questions.filter(function(q){ return examMatches(q, pSel.value); }).length }; }).filter(function(c){ return c.n > 0; });
+  var copts = [el('option', { value:'', text:'All topics' })].concat(cats.map(function(c){ return el('option', { value:c.name, text:c.name + ' (' + c.n + ')' }); }));
+  cSel.replaceChildren.apply(cSel, copts);
+  var wantC = L && L.cat ? L.cat : keepC;
+  var match = copts.filter(function(o){ return norm(o.value) === norm(wantC) && o.value; })[0];
+  cSel.value = match ? match.value : '';
+
+  var pool = examPool(pSel.value, cSel.value), n = $('#ex-n');
+  var totalQs = 0; sortedCats().forEach(function(c){ c.questions.forEach(function(q){ if (paperMatchAny(q, pSel.value) && (!cSel.value || norm(c.name) === norm(cSel.value))) totalQs++; }); });
+  n.max = String(pool.length);
+  if (L && L.n){ n.value = String(Math.min(pool.length, Math.max(1, parseInt(L.n, 10) || pool.length))); exTouched.n = true; }
+  else if (!exTouched.n || Number(n.value) > pool.length || !n.value) n.value = String(pool.length || '');
+  var count = Math.min(pool.length, Math.max(1, parseInt(n.value, 10) || 1));
+  var mins = $('#ex-min');
+  if (L && L.min !== null && L.min !== undefined && L.min !== ''){
+    if (L.min === '0') $('#ex-notimer').checked = true; else { mins.value = String(parseInt(L.min, 10) || 1); $('#ex-notimer').checked = false; }
+    exTouched.min = true;
+  } else if (!exTouched.min) mins.value = String(Math.max(1, Math.round(count * 1.125)));
+  if (L){
+    exSetIf('#ex-pos', L.pos); exSetIf('#ex-neg', L.neg);
+    if (L.shuffle === '0') $('#ex-shuffle').checked = false; else if (L.shuffle === '1') $('#ex-shuffle').checked = true;
+  }
+  $('#ex-min').disabled = $('#ex-notimer').checked;
+  $('#ex-avail').textContent = pool.length
+    ? 'Up to ' + pool.length + (totalQs > pool.length ? ' (' + (totalQs - pool.length) + ' without a correct answer are left out)' : '')
+    : (totalQs ? 'These questions have no correct answer marked yet, so they cannot be scored.' : 'No questions match.');
+  $('#ex-start').disabled = !pool.length;
+  $('#ex-linkbtn').hidden = !!window.claude;
+  if (window.claude) $('#ex-linkbox').hidden = true;
+
+  /* resume banner */
+  var rb = $('#ex-resume');
+  rb.hidden = !exRunning();
+  if (exRunning()){
+    rb.replaceChildren(el('span', { text:'You have an exam in progress (' + plural(exam.items.length, 'question') + ').' }),
+      el('button', { type:'button', class:'btn small primary', text:'Resume exam', onclick:function(){ renderExam(); } }));
+  }
+
+  /* history */
+  var hist = exHistory(), hb = $('#ex-history');
+  hb.hidden = !hist.length;
+  if (hist.length){
+    var tb = el('tbody');
+    hist.slice(0, 8).forEach(function(h){
+      tb.append(el('tr', {}, tcell('td', new Date(h.t).toLocaleDateString('en-IN', { day:'numeric', month:'short' })), tcell('td', h.title),
+        tcell('td', round2(h.score) + ' / ' + round2(h.max), 'num'), tcell('td', h.pct.toFixed(0) + '%', 'num'), tcell('td', exClock(h.secs * 1000), 'num')));
+    });
+    var tbl = el('table', { class:'data' }, el('thead', {}, el('tr', {}, tcell('th','Date'), tcell('th','Exam'), tcell('th','Score','num'), tcell('th','%','num'), tcell('th','Time','num'))), tb);
+    hb.replaceChildren(el('h2', { class:'a-h', text:'Recent attempts on this device' }), el('div', { class:'tbl-wrap' }, tbl));
+  }
+  if (!pending) state.link = null;
+  if (L && L.start && pool.length && !exRunning()){ setTimeout(startExamFromSetup, 0); }
+}
+function paperMatchAny(q, paper){
+  var k = refKey(q.ref);
+  return paper === '' || (paper === '__none__' ? !k : k === paper);
+}
+function setupSettings(){
+  var pool = examPool($('#ex-paper').value, $('#ex-cat').value);
+  var n = Math.min(pool.length, Math.max(1, parseInt($('#ex-n').value, 10) || pool.length));
+  var pos = Number($('#ex-pos').value); if (!(pos > 0)) pos = 1;
+  return { pool:pool, n:n, pos:pos, neg:Number($('#ex-neg').value) || 0, shuffle:$('#ex-shuffle').checked,
+    minutes: $('#ex-notimer').checked ? 0 : Math.max(1, parseInt($('#ex-min').value, 10) || 1),
+    paper:$('#ex-paper').value, cat:$('#ex-cat').value };
+}
+function startExamFromSetup(){
+  var s = setupSettings();
+  if (!s.pool.length){ toast('There are no scorable questions for this choice.', 'error'); return; }
+  var items = s.shuffle ? shuffled(s.pool) : s.pool.slice();
+  items = items.slice(0, s.n);
+  var title = s.paper ? (examPapers().papers[s.paper] ? examPapers().papers[s.paper].label : 'Paper') : 'All papers';
+  if (s.cat) title += ', ' + s.cat;
+  startExam(items, { title:title, minutes:s.minutes, pos:s.pos, neg:s.neg });
+}
+function startExam(items, o){
+  var now = Date.now();
+  exam = { id:uid('x'), title:o.title, startedAt:now, minutes:o.minutes, deadline: o.minutes ? now + o.minutes * 60000 : 0,
+    pos:o.pos, neg:o.neg, items:items, resp:items.map(function(){ return -1; }), marked:items.map(function(){ return false; }),
+    seen:items.map(function(_, i){ return i === 0; }), idx:0, finished:false, finishedAt:0, histSaved:false };
+  exFilter = 'all';
+  exSave(); exStartTimer(); switchTab('exam'); window.scrollTo(0, 0);
+}
+function exStartTimer(){
+  clearInterval(exTimer);
+  exTimer = setInterval(exTick, 1000);
+  exTick();
+}
+function exTick(){
+  if (!exam || exam.finished){ clearInterval(exTimer); return; }
+  var t = $('#ex-timer');
+  if (exam.deadline){
+    var left = exam.deadline - Date.now();
+    if (t){ t.textContent = exClock(left); t.classList.toggle('low', left <= 60000); }
+    if (left <= 0) finishExam(true);
+  } else if (t){ t.textContent = exClock(Date.now() - exam.startedAt); }
+}
+
+/* ----- running ----- */
+function paletteState(i){
+  var e = exam, st = e.resp[i] >= 0 ? 'answered' : (e.seen[i] ? 'seen' : 'new');
+  return st;
+}
+function goTo(i){
+  i = Math.max(0, Math.min(exam.items.length - 1, i));
+  exam.idx = i; exam.seen[i] = true; exSave(); renderRun();
+}
+function pickOption(k){
+  exam.resp[exam.idx] = exam.resp[exam.idx] === k ? -1 : k;
+  exam.seen[exam.idx] = true; exSave(); renderRun();
+}
+function renderRun(){
+  var e = exam, i = e.idx, it = e.items[i], box = $('#ex-run');
+  var answered = e.resp.filter(function(r){ return r >= 0; }).length, markedN = e.marked.filter(Boolean).length;
+  var bar = el('div', { class:'ex-bar' },
+    el('div', { class:'ex-prog' }, el('b', { text:'Question ' + (i + 1) + ' of ' + e.items.length }), el('span', { text: answered + ' answered' })),
+    el('div', { class:'ex-timer', id:'ex-timer', text:'' }),
+    el('button', { type:'button', class:'btn primary small', text:'Submit', onclick:function(){ renderSubmitBox(true); } }));
+  var q = el('article', { class:'ex-q' }, el('p', { class:'qtext', text:it.q }));
+  var opts = el('div', { class:'ex-opts', role:'radiogroup', 'aria-label':'Options' });
+  it.o.forEach(function(t, k){
+    var on = e.resp[i] === k;
+    var b = el('button', { type:'button', class:'exopt' + (on ? ' on' : ''), role:'radio', 'aria-checked':String(on), onclick:function(){ pickOption(k); } },
+      el('span', { class:'bub', text:LET[k] }), el('span', { class:'ot', text:t }));
+    opts.append(b);
+  });
+  var nav = el('div', { class:'ex-nav' },
+    el('button', { type:'button', class:'btn', text:'Previous', disabled: i === 0 ? true : null, onclick:function(){ goTo(i - 1); } }),
+    el('button', { type:'button', class:'btn' + (e.marked[i] ? ' primary' : ''), text: e.marked[i] ? 'Marked for review' : 'Mark for review', 'aria-pressed':String(e.marked[i]), onclick:function(){ e.marked[i] = !e.marked[i]; exSave(); renderRun(); } }),
+    el('button', { type:'button', class:'btn', text:'Clear answer', disabled: e.resp[i] < 0 ? true : null, onclick:function(){ e.resp[i] = -1; exSave(); renderRun(); } }),
+    el('button', { type:'button', class:'btn', text:'Next', disabled: i === e.items.length - 1 ? true : null, onclick:function(){ goTo(i + 1); } }));
+  var pal = el('div', { class:'ex-pal' });
+  e.items.forEach(function(_, n){
+    var st = paletteState(n), lab = 'Question ' + (n + 1) + ', ' + (st === 'answered' ? 'answered' : st === 'seen' ? 'not answered' : 'not visited') + (e.marked[n] ? ', marked for review' : '');
+    pal.append(el('button', { type:'button', class:'pal ' + st + (e.marked[n] ? ' mk' : '') + (n === i ? ' cur' : ''), 'aria-label':lab, 'aria-current': n === i ? 'true' : null, text:String(n + 1), onclick:function(){ goTo(n); } }));
+  });
+  var legend = el('p', { class:'note', text:'Blue: answered. Amber: seen but not answered. Dot: marked for review. ' + plural(markedN, 'question') + ' marked.' });
+  var quit = armButton('Quit exam', 'Tap again to discard', function(){ exam = null; exSave(); clearInterval(exTimer); renderExam(); }, 'plain');
+  box.replaceChildren(bar, el('div', { id:'ex-submitbox', hidden:true }), q, opts, nav, el('h2', { class:'a-h', text:'Question palette' }), pal, legend, el('div', { class:'row' }, quit));
+  exTick();
+}
+function renderSubmitBox(show){
+  var e = exam, box = $('#ex-submitbox'); if (!box) return;
+  if (!show){ box.hidden = true; return; }
+  var answered = e.resp.filter(function(r){ return r >= 0; }).length, markedN = e.marked.filter(Boolean).length;
+  box.hidden = false; box.className = 'msg warn';
+  box.replaceChildren(
+    el('div', { text:'Submit the exam? ' + answered + ' answered, ' + (e.items.length - answered) + ' not answered, ' + markedN + ' marked for review.' }),
+    el('div', { class:'row' },
+      el('button', { type:'button', class:'btn primary small', text:'Submit exam', onclick:function(){ finishExam(false); } }),
+      el('button', { type:'button', class:'btn small', text:'Keep going', onclick:function(){ renderSubmitBox(false); } })));
+  box.scrollIntoView && box.scrollIntoView({ block:'nearest' });
+}
+
+/* ----- finishing and results ----- */
+function scoreExam(e){
+  var r = { correct:0, wrong:0, skipped:0, cats:{} };
+  e.items.forEach(function(it, i){
+    var c = r.cats[it.cat] = r.cats[it.cat] || { n:0, correct:0, wrong:0, skipped:0 };
+    c.n++;
+    if (e.resp[i] < 0){ r.skipped++; c.skipped++; }
+    else if (e.resp[i] === it.a){ r.correct++; c.correct++; }
+    else { r.wrong++; c.wrong++; }
+  });
+  r.max = e.items.length * e.pos;
+  r.score = r.correct * e.pos - r.wrong * e.pos * e.neg;
+  r.pct = r.max ? r.score / r.max * 100 : 0;
+  r.secs = Math.max(0, Math.round(((e.finishedAt || Date.now()) - e.startedAt) / 1000));
+  if (e.minutes) r.secs = Math.min(r.secs, e.minutes * 60);
+  return r;
+}
+function finishExam(auto){
+  if (!exam || exam.finished) return;
+  exam.finished = true; exam.finishedAt = Date.now();
+  clearInterval(exTimer);
+  var r = scoreExam(exam);
+  if (!exam.histSaved){
+    exam.histSaved = true;
+    var h = exHistory(); h.unshift({ t:exam.finishedAt, title:exam.title, score:r.score, max:r.max, pct:r.pct, secs:r.secs });
+    exSet(EX_HIST, JSON.stringify(h.slice(0, 30)));
+  }
+  exSave();
+  if (auto) toast('Time is up. Your exam was submitted.');
+  window.scrollTo && window.scrollTo(0, 0);
+  renderExam();
+}
+function retakeFromResult(){
+  var e = exam, items = [];
+  e.items.forEach(function(it, i){ if (e.resp[i] !== it.a) items.push(it); });
+  if (!items.length) return;
+  var per = e.minutes ? e.minutes / e.items.length : 0;
+  startExam(shuffled(items), { title:'Retake: ' + e.title, minutes: per ? Math.max(1, Math.ceil(items.length * per)) : 0, pos:e.pos, neg:e.neg });
+}
+function renderResult(){
+  var e = exam, r = scoreExam(e), box = $('#ex-result');
+  var attempted = r.correct + r.wrong;
+  var parts = [];
+  parts.push(el('div', { class:'card ex-score' },
+    el('p', { class:'ex-big', text: round2(r.score) + ' / ' + round2(r.max) }),
+    el('p', { class:'sub', text: r.pct.toFixed(1) + '%  in ' + exClock(r.secs * 1000) + '. ' + e.title }),
+    el('div', { class:'stats-grid', style:'margin-top:14px' },
+      el('div', { class:'stat' }, el('b', { text:String(r.correct) }), el('span', { text:'Correct' })),
+      el('div', { class:'stat' }, el('b', { text:String(r.wrong) }), el('span', { text:'Wrong' + (e.neg ? ' (' + round2(r.wrong * e.pos * e.neg) + ' marks lost)' : '') })),
+      el('div', { class:'stat' }, el('b', { text:String(r.skipped) }), el('span', { text:'Not answered' })),
+      el('div', { class:'stat' }, el('b', { text: attempted ? pct1(r.correct, attempted) : '0.0%' }), el('span', { text:'Accuracy on attempted' })))));
+
+  parts.push(el('h2', { class:'a-h', text:'Performance by topic' }));
+  var rows = Object.keys(r.cats).map(function(k){ var c = r.cats[k]; c.name = k; c.acc = c.n ? c.correct / c.n * 100 : 0; return c; })
+    .sort(function(a, b){ return (a.acc - b.acc) || (b.n - a.n); });
+  var tb = el('tbody');
+  rows.forEach(function(c){
+    tb.append(el('tr', {}, tcell('td', c.name), tcell('td', c.n, 'num'), tcell('td', c.correct, 'num'), tcell('td', c.wrong, 'num'), tcell('td', c.skipped, 'num'), tcell('td', c.acc.toFixed(0) + '%', 'num')));
+  });
+  parts.push(el('div', { class:'tbl-wrap' }, el('table', { class:'data' },
+    el('thead', {}, el('tr', {}, tcell('th','Topic'), tcell('th','Qs','num'), tcell('th','Right','num'), tcell('th','Wrong','num'), tcell('th','Skipped','num'), tcell('th','Score','num'))), tb)));
+  parts.push(el('p', { class:'note', text:'Weakest topics are listed first.' }));
+
+  var weak = r.wrong + r.skipped;
+  parts.push(el('div', { class:'row', style:'margin-top:16px' },
+    weak ? el('button', { type:'button', class:'btn primary', text:'Retake ' + plural(weak, 'wrong or skipped question'), onclick:retakeFromResult }) : null,
+    el('button', { type:'button', class:'btn', text:'New exam', onclick:function(){ exam = null; exSave(); exFilter = 'all'; renderExam(); } })));
+
+  parts.push(el('h2', { class:'a-h', text:'Review your answers' }));
+  var chips = el('div', { class:'row' });
+  [['all','All'], ['wrong','Wrong'], ['skipped','Not answered'], ['marked','Marked']].forEach(function(f){
+    chips.append(el('button', { type:'button', class:'btn small' + (exFilter === f[0] ? ' primary' : ''), text:f[1], 'aria-pressed':String(exFilter === f[0]), onclick:function(){ exFilter = f[0]; renderResult(); } }));
+  });
+  parts.push(chips);
+  var list = el('div', { style:'margin-top:16px' }), shown = 0;
+  e.items.forEach(function(it, i){
+    var got = e.resp[i], ok = got === it.a, skipped = got < 0;
+    if (exFilter === 'wrong' && (ok || skipped)) return;
+    if (exFilter === 'skipped' && !skipped) return;
+    if (exFilter === 'marked' && !e.marked[i]) return;
+    shown++;
+    var card = el('article', { class:'qcard' });
+    card.append(el('p', { class:'qtext' }, el('b', { text:'Q' + (i + 1) }), it.q));
+    it.o.forEach(function(t, k){
+      var cls = 'qopt' + (k === it.a ? ' correct' : '') + (k === got && !ok ? ' wrong' : '');
+      var tag = k === it.a ? (k === got ? 'Your answer, correct' : 'Correct answer') : (k === got ? 'Your answer' : '');
+      card.append(el('div', { class:cls }, el('span', { class:'bub', text:LET[k] }), el('span', {}, t, tag ? el('em', { class:'tag', text:'  ' + tag }) : null)));
+    });
+    card.append(el('div', { class:'qmeta' },
+      el('span', { class:'chip ' + (skipped ? 'plain' : ok ? 'ok' : 'bad'), text: skipped ? 'Not answered' : ok ? 'Correct' : 'Wrong' }),
+      el('span', { class:'chip plain', text:it.cat }), it.ref ? el('span', { class:'chip plain', text:refClean(it.ref) }) : null,
+      e.marked[i] ? el('span', { class:'chip', text:'Marked' }) : null));
+    list.append(card);
+  });
+  if (!shown) list.append(el('p', { class:'note', text:'Nothing to show for this filter.' }));
+  parts.push(list);
+  box.replaceChildren.apply(box, parts);
+}
+
+/* ----- shell ----- */
+function updateExamChrome(){
+  exEnsure();
+  document.body.classList.toggle('in-exam', exRunning() && state.tab === 'exam');
+  var tb = $('#tab-btn-exam');
+  if (tb) tb.textContent = 'Exam' + (exRunning() ? ' \u25CF' : '');
+}
+function renderExam(){
+  exEnsure();
+  var view = !exam ? 'setup' : (exam.finished ? 'result' : 'run');
+  $('#ex-setup').hidden = view !== 'setup'; $('#ex-run').hidden = view !== 'run'; $('#ex-result').hidden = view !== 'result';
+  if (view === 'setup') refreshExamSetup();
+  else if (view === 'run') renderRun();
+  else renderResult();
+  updateExamChrome();
+}
+function buildExamLink(){
+  var s = setupSettings(), p = new URLSearchParams();
+  p.set('tab', 'exam');
+  if (s.paper) p.set('paper', s.paper);
+  if (s.cat) p.set('cat', s.cat);
+  if (s.n && s.n < s.pool.length) p.set('n', String(s.n));
+  p.set('min', String(s.minutes));
+  if (s.pos !== 1) p.set('pos', String(s.pos));
+  p.set('neg', String(s.neg));
+  p.set('shuffle', s.shuffle ? '1' : '0');
+  if ($('#ex-autostart').checked) p.set('start', '1');
+  return location.origin + location.pathname + '?' + p.toString();
+}
+function showExamLink(){
+  var box = $('#ex-linkbox');
+  $('#ex-link').value = buildExamLink();
+  box.hidden = false;
+}
+function copyExamLink(){
+  var inp = $('#ex-link'); inp.value = buildExamLink();
+  var done = function(){ toast('Exam link copied.'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(inp.value).then(done, function(){ inp.select(); toast('Press and hold the link to copy it.'); });
+  else { inp.select(); try { document.execCommand('copy'); done(); } catch(e){ toast('Press and hold the link to copy it.'); } }
+}
+function parseExamLink(){
+  try {
+    var p = new URLSearchParams(location.search);
+    if (p.get('tab') !== 'exam') return;
+    state.link = { paper:p.get('paper') || '', cat:p.get('cat') || '', n:p.get('n'), min:p.get('min'), neg:p.get('neg'), pos:p.get('pos'), shuffle:p.get('shuffle'), start:p.get('start') === '1' };
+    switchTab('exam');
+  } catch(e){}
+}
+
 /* ---------- Excel backup ---------- */
 var XL_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 var XL_COLS = [
@@ -1871,6 +2321,7 @@ function init(){
   loadLocal();
   renderAll();
   initSync();
+  parseExamLink();
   setInterval(pollSync, 30000);
   document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') pollSync(); });
   window.addEventListener('online', function(){ if (sync.status === 'offline') runSync(); });
@@ -1905,6 +2356,32 @@ $('#p-none').addEventListener('click', function(){ state.cats.forEach(function(c
 $('#btn-pdf').addEventListener('click', makePdf);
 $('#a-ref').addEventListener('change', renderAnalysis);
 $('#a-export').addEventListener('click', exportAnalysis);
+function syncExamMinutes(){
+  if (exTouched.min) return;
+  var n = Math.max(1, parseInt($('#ex-n').value, 10) || 1);
+  $('#ex-min').value = String(Math.max(1, Math.round(n * 1.125)));
+}
+function refreshExamLinkIfShown(){ if (!$('#ex-linkbox').hidden) $('#ex-link').value = buildExamLink(); }
+['#ex-paper', '#ex-cat'].forEach(function(id){
+  $(id).addEventListener('change', function(){ exTouched.n = false; refreshExamSetup(); refreshExamLinkIfShown(); });
+});
+$('#ex-n').addEventListener('input', function(){ exTouched.n = true; syncExamMinutes(); refreshExamLinkIfShown(); });
+$('#ex-min').addEventListener('input', function(){ exTouched.min = true; refreshExamLinkIfShown(); });
+$('#ex-notimer').addEventListener('change', function(){ $('#ex-min').disabled = $('#ex-notimer').checked; refreshExamLinkIfShown(); });
+['#ex-pos', '#ex-neg', '#ex-shuffle', '#ex-autostart'].forEach(function(id){ $(id).addEventListener('change', refreshExamLinkIfShown); });
+$('#ex-start').addEventListener('click', startExamFromSetup);
+$('#ex-linkbtn').addEventListener('click', showExamLink);
+$('#ex-copy').addEventListener('click', copyExamLink);
+document.addEventListener('keydown', function(ev){
+  if (!exRunning() || state.tab !== 'exam' || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  var tag = ev.target && ev.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  var k = ev.key.toLowerCase(), pick = 'abcd'.indexOf(k);
+  if (pick < 0 && /^[1-4]$/.test(k)) pick = Number(k) - 1;
+  if (pick >= 0){ ev.preventDefault(); pickOption(pick); }
+  else if (ev.key === 'ArrowRight'){ ev.preventDefault(); goTo(exam.idx + 1); }
+  else if (ev.key === 'ArrowLeft'){ ev.preventDefault(); goTo(exam.idx - 1); }
+});
 $('#btn-export').addEventListener('click', exportExcel);
 $('#btn-export').addEventListener('click', exportExcel);
 $('#file-import').addEventListener('change', function(e){
